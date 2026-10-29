@@ -11,15 +11,17 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected $table = 'users';
+
     protected $fillable = [
+        'nama',
         'name',
+        'nim',
         'email',
+        'username',
         'password',
         'role',
-        'phone',
-        'student_number',
-        'program_study',
-        'status',
+        'status_aktif',
     ];
 
     protected $hidden = [
@@ -28,42 +30,48 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
-    public function studentProfile()
+    // Accessor so $user->name always returns $user->nama if name is not set
+    public function getNameAttribute($value)
     {
-        return $this->hasOne(StudentProfile::class);
+        return $value ?: $this->attributes['nama'] ?? '';
     }
 
-    public function bookings()
+    public function peminjaman()
     {
-        return $this->hasMany(Booking::class);
+        return $this->hasMany(Peminjaman::class, 'user_id');
     }
 
+    public function persetujuan()
+    {
+        return $this->hasMany(Persetujuan::class, 'user_id');
+    }
+
+    public function notifikasi()
+    {
+        return $this->hasMany(Notifikasi::class, 'user_id');
+    }
+
+    // Alias for compatibility
     public function notifications()
     {
-        return $this->hasMany(Notification::class);
+        return $this->notifikasi();
     }
-}
 
-class StudentProfile extends \Illuminate\Database\Eloquent\Model
-{
-    protected $table = 'students';
-
-    protected $fillable = [
-        'user_id',
-        'nim',
-        'faculty',
-        'study_program',
-        'advisor_name',
-        'advisor_nip',
-        'academic_year',
-    ];
-
-    public function user()
+    public function logAktivitas()
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(LogAktivitas::class, 'user_id');
+    }
+
+    public function serahTerima()
+    {
+        return $this->hasMany(SerahTerima::class, 'petugas_id');
+    }
+
+    public function pengembalian()
+    {
+        return $this->hasMany(Pengembalian::class, 'petugas_id');
     }
 }

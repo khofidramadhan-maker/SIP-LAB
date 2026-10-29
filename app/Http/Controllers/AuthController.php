@@ -75,7 +75,6 @@ class AuthController extends Controller
             'mahasiswa' => route('student.dashboard'),
             'staff' => route('staff.dashboard'),
             'kepala_lab' => route('lab-head.dashboard'),
-            'admin' => route('admin.dashboard'),
             default => route('student.dashboard'),
         };
     }

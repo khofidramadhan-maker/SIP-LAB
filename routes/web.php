@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
@@ -25,6 +24,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // Role: Mahasiswa
     Route::middleware('role:mahasiswa')->group(function () {
         Route::get('/mahasiswa/dashboard', [DashboardController::class, 'studentDashboard'])->name('student.dashboard');
         Route::get('/mahasiswa/inventaris', [InventoryController::class, 'index'])->name('student.inventory');
@@ -35,21 +35,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/mahasiswa/notifikasi', [NotificationController::class, 'index'])->name('student.notifications');
     });
 
+    // Role: Staf Sarpras
     Route::middleware('role:staff')->group(function () {
         Route::get('/staff/dashboard', [DashboardController::class, 'staffDashboard'])->name('staff.dashboard');
         Route::get('/staff/verifikasi', [StaffController::class, 'index'])->name('staff.verification');
         Route::post('/staff/verifikasi/{booking}', [StaffController::class, 'verify'])->name('staff.verify');
+        Route::get('/staff/inventaris', [InventoryController::class, 'index'])->name('staff.inventory');
     });
 
+    // Role: Kepala Laboratorium (Pimpinan Lab: Approval & Laporan Operasional)
     Route::middleware('role:kepala_lab')->group(function () {
         Route::get('/kepala-lab/dashboard', [DashboardController::class, 'labHeadDashboard'])->name('lab-head.dashboard');
         Route::get('/kepala-lab/approval', [LabHeadController::class, 'index'])->name('lab-head.approval');
         Route::post('/kepala-lab/approval/{booking}', [LabHeadController::class, 'decide'])->name('lab-head.decide');
-    });
-
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
-        Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
-        Route::get('/admin/laporan', [ReportController::class, 'index'])->name('admin.reports');
+        Route::get('/kepala-lab/laporan', [ReportController::class, 'index'])->name('lab-head.reports');
     });
 });

@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Asset;
-use App\Models\Booking;
-use App\Models\LabRoom;
+use App\Models\Alat;
+use App\Models\DetailAlat;
+use App\Models\DetailRuangan;
+use App\Models\LogAktivitas;
+use App\Models\Notifikasi;
+use App\Models\Peminjaman;
+use App\Models\Ruangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,60 +16,86 @@ class BookingController extends Controller
 {
     public function index()
     {
-        $bookings = Booking::with(['labRoom', 'user'])->latest()->get();
-        return view('bookings.index', compact('bookings'));
+        $bookings = Peminjaman::with(['user', 'detailRuangan.ruangan'])->latest()->get();
+        return view('history.index', compact('bookings'));
     }
 
     public function create()
     {
-        $rooms = LabRoom::all();
-        $assets = Asset::all();
+        $rooms = Ruangan::all();
+        $assets = Alat::all();
         return view('bookings.create', compact('rooms', 'assets'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'purpose' => ['required', 'string'],
-            'lab_room_id' => ['nullable', 'exists:lab_rooms,id'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'start_time' => ['required'],
-            'end_time' => ['required'],
-            'supervisor_name' => ['nullable', 'string'],
-            'supervisor_nip' => ['nullable', 'string'],
+            'keperluan' => ['required', 'string'],
+            'ruangan_id' => ['required', 'exists:ruangan,id'],
+            'tanggal_pinjam' => ['required', 'date'],
+            'jam_mulai' => ['required'],
+            'jam_selesai' => ['required'],
+            'alat_id' => ['nullable', 'exists:alat,id'],
+            'jumlah_alat' => ['nullable', 'integer', 'min:1'],
+            'document' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
         ]);
 
-        $booking = Booking::create([
+        $dokumenPath = null;
+        if ($request->hasFile('document')) {
+            $dokumenPath = $request->file('document')->store('dokumen_peminjaman', 'public');
+        }
+
+        // Generate unique kode peminjaman
+        $kode = 'PINJAM-' . date('Ymd') . '-' . rand(100, 999);
+
+        $booking = Peminjaman::create([
+            'kode_peminjaman' => $kode,
             'user_id' => Auth::id(),
-            'lab_room_id' => $validated['lab_room_id'] ?? null,
-            'title' => $validated['title'],
-            'purpose' => $validated['purpose'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-            'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'],
-            'request_type' => 'lab_usage',
-            'supervisor_name' => $validated['supervisor_name'] ?? null,
-            'supervisor_nip' => $validated['supervisor_nip'] ?? null,
+            'tanggal_pinjam' => $validated['tanggal_pinjam'],
+            'jam_mulai' => $validated['jam_mulai'],
+            'jam_selesai' => $validated['jam_selesai'],
+            'keperluan' => $validated['keperluan'],
+            'dokumen_pendukung' => $dokumenPath,
             'status' => 'Menunggu Verifikasi',
         ]);
 
-        if ($request->hasFile('document')) {
-            $path = $request->file('document')->store('documents', 'public');
-            $booking->documents()->create([
-                'document_type' => 'rekomendasi',
-                'file_name' => $request->file('document')->getClientOriginalName(),
-                'file_path' => $path,
+        // Simpan relasi detail_ruangan
+        DetailRuangan::create([
+            'peminjaman_id' => $booking->id,
+            'ruangan_id' => $validated['ruangan_id'],
+        ]);
+
+        // Simpan relasi detail_alat jika ada alat yang dipilih
+        if (!empty($validated['alat_id'])) {
+            DetailAlat::create([
+                'peminjaman_id' => $booking->id,
+                'alat_id' => $validated['alat_id'],
+                'jumlah' => $validated['jumlah_alat'] ?? 1,
+                'kondisi_awal' => 'baik',
             ]);
         }
 
-        return redirect()->route('student.dashboard')->with('success', 'Pengajuan berhasil dibuat.');
+        // Catat ke log_aktivitas
+        LogAktivitas::create([
+            'user_id' => Auth::id(),
+            'aktivitas' => "Mengajukan permohonan peminjaman laboratorium {$kode}",
+            'waktu' => now(),
+        ]);
+
+        // Buat notifikasi
+        Notifikasi::create([
+            'user_id' => Auth::id(),
+            'peminjaman_id' => $booking->id,
+            'pesan' => "Permohonan peminjaman {$kode} berhasil dibuat dan saat ini dalam antrean verifikasi staf.",
+            'sudah_dibaca' => false,
+        ]);
+
+        return redirect()->route('student.dashboard')->with('success', "Pengajuan peminjaman {$kode} berhasil dikirim.");
     }
 
-    public function show(Booking $booking)
+    public function show(Peminjaman $booking)
     {
+        $booking->load(['user', 'detailRuangan.ruangan', 'detailAlat.alat', 'persetujuan.user', 'serahTerima', 'pengembalian.sanksi']);
         return view('bookings.show', compact('booking'));
     }
 }

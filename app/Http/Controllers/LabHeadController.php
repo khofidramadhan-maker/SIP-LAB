@@ -2,26 +2,65 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Booking;
+use App\Models\LogAktivitas;
+use App\Models\Notifikasi;
+use App\Models\Peminjaman;
+use App\Models\Persetujuan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LabHeadController extends Controller
 {
     public function index()
     {
-        $bookings = Booking::with('user')->where('status', 'Menunggu Persetujuan Kepala Lab')->latest()->get();
+        $bookings = Peminjaman::with(['user', 'detailRuangan.ruangan', 'detailAlat.alat', 'persetujuan'])
+            ->where('status', 'Menunggu Persetujuan Kepala Lab')
+            ->latest()
+            ->get();
+
         return view('lab-head.index', compact('bookings'));
     }
 
-    public function decide(Request $request, Booking $booking)
+    public function decide(Request $request, Peminjaman $booking)
     {
-        $status = $request->input('status');
+        $statusInput = $request->input('status');
         $notes = $request->input('notes');
 
-        $booking->status = $status === 'approved' ? 'Disetujui' : 'Ditolak';
-        $booking->notes = $notes;
+        $isApproved = ($statusInput === 'approved');
+        $booking->status = $isApproved ? 'Disetujui' : 'Ditolak';
         $booking->save();
 
-        return back()->with('success', 'Keputusan kepala lab berhasil disimpan.');
+        $keputusan = $isApproved ? 'disetujui' : 'ditolak';
+
+        // Rekam riwayat persetujuan tingkat 2 (Kepala Lab)
+        Persetujuan::create([
+            'peminjaman_id' => $booking->id,
+            'user_id' => Auth::id(),
+            'tingkat' => '2',
+            'keputusan' => $keputusan,
+            'catatan' => $notes,
+            'tanggal' => now(),
+        ]);
+
+        // Rekam log aktivitas
+        LogAktivitas::create([
+            'user_id' => Auth::id(),
+            'aktivitas' => "Kepala Laboratorium menetapkan putusan tingkat II untuk {$booking->kode_peminjaman} ({$keputusan})",
+            'waktu' => now(),
+        ]);
+
+        // Kirim notifikasi ke pemohon
+        $pesanNotif = $isApproved
+            ? "Selamat! Permohonan peminjaman {$booking->kode_peminjaman} telah disetujui resmi oleh Kepala Laboratorium."
+            : "Permohonan peminjaman {$booking->kode_peminjaman} ditolak oleh Kepala Lab. Catatan: " . ($notes ?? 'Tidak disetujui');
+
+        Notifikasi::create([
+            'user_id' => $booking->user_id,
+            'peminjaman_id' => $booking->id,
+            'pesan' => $pesanNotif,
+            'sudah_dibaca' => false,
+        ]);
+
+        return back()->with('success', "Keputusan kepala laboratorium untuk {$booking->kode_peminjaman} berhasil disimpan.");
     }
 }
