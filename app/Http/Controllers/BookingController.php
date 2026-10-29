@@ -20,9 +20,29 @@ class BookingController extends Controller
         return view('history.index', compact('bookings'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $rooms = Ruangan::all();
+        // Retrieve filter parameters
+        $date = $request->query('date');
+        $start = $request->query('start');
+        $end = $request->query('end');
+
+        // Base query for rooms
+        $roomsQuery = Ruangan::query();
+
+        if ($date && $start && $end) {
+            // Exclude rooms that have an approved booking overlapping the requested time range
+            $roomsQuery->whereDoesntHave('peminjamen', function ($q) use ($date, $start, $end) {
+                $q->where('tanggal_pinjam', $date)
+                  ->where('status', 'Disetujui')
+                  ->where(function ($sub) use ($start, $end) {
+                      $sub->where('jam_mulai', '<', $end)
+                          ->where('jam_selesai', '>', $start);
+                  });
+            });
+        }
+
+        $rooms = $roomsQuery->get();
         $assets = Alat::all();
         return view('bookings.create', compact('rooms', 'assets'));
     }
@@ -56,7 +76,7 @@ class BookingController extends Controller
             'jam_selesai' => $validated['jam_selesai'],
             'keperluan' => $validated['keperluan'],
             'dokumen_pendukung' => $dokumenPath,
-            'status' => 'Menunggu Verifikasi',
+                        'status' => 'Menunggu Pemeriksaan Staf Sarpras',
         ]);
 
         // Simpan relasi detail_ruangan

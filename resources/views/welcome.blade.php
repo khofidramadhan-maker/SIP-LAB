@@ -30,7 +30,7 @@
                                 <i class="bi bi-speedometer2"></i> Dashboard Verifikasi Staf
                             </a>
                         @else
-                            <a href="{{ route('lab-head.dashboard') }}" class="btn btn-primary px-4 py-3 fw-bold rounded-3 shadow-sm d-inline-flex align-items-center gap-2" style="background:#2563eb; border:none;">
+                            <a href="/kepala-lab/dashboard" class="btn btn-primary px-4 py-3 fw-bold rounded-3 shadow-sm d-inline-flex align-items-center gap-2" style="background:#2563eb; border:none;">
                                 <i class="bi bi-clipboard2-check"></i> Dashboard Persetujuan
                             </a>
                         @endif

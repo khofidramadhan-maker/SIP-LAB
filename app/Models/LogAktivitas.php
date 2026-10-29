@@ -15,6 +15,16 @@ class LogAktivitas extends Model
         'user_id',
         'aktivitas',
         'waktu',
+        'jenis_data',
+        'kode_identitas',
+        'jenis_aksi',
+        'data_sebelum',
+        'data_sesudah',
+    ];
+
+    protected $casts = [
+        'data_sebelum' => 'array',
+        'data_sesudah' => 'array',
     ];
 
     public function user()

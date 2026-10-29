@@ -22,7 +22,28 @@
             <form method="POST" action="{{ route('booking.store') }}" enctype="multipart/form-data">
                 @csrf
 
-                <!-- Section 1: Informasi Dasar -->
+                <!-- Filter Form for Room Availability -->
+                <form method="GET" action="{{ route('booking.create') }}" class="mb-4">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Tanggal</label>
+                            <input type="date" name="date" class="form-control" value="{{ request('date') }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Jam Mulai</label>
+                            <input type="time" name="start" class="form-control" value="{{ request('start') }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Jam Selesai</label>
+                            <input type="time" name="end" class="form-control" value="{{ request('end') }}" required>
+                        </div>
+                        <div class="col-md-3 d-flex">
+                            <button type="submit" class="btn btn-primary me-2">Terapkan Filter</button>
+                            <a href="{{ route('booking.create') }}" class="btn btn-outline-secondary">Reset</a>
+                        </div>
+                    </div>
+                </form>
+
                 <div class="mb-4">
                     <h6 class="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
                         <span class="badge bg-primary rounded-circle" style="width: 22px; height: 22px; font-size: 0.72rem; display: flex; align-items: center; justify-content: center;">1</span>

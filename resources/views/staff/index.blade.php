@@ -59,10 +59,12 @@
                             <small class="text-muted">{{ substr($booking->jam_mulai, 0, 5) }} - {{ substr($booking->jam_selesai, 0, 5) }} WIB</small>
                         </td>
                         <td>
-                            @if($booking->status === 'Menunggu Verifikasi')
+                            @if($booking->status === 'Menunggu Pemeriksaan Staf Sarpras')
                                 <span class="badge-status badge-pending">Menunggu Staf</span>
-                            @else
+                            @elseif($booking->status === 'Perlu Revisi')
                                 <span class="badge-status badge-warning">Perlu Revisi</span>
+                            @else
+                                <span class="badge-status badge-success">{{ $booking->status }}</span>
                             @endif
                         </td>
                         <td>

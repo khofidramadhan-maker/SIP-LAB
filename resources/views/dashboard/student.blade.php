@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Dashboard Mahasiswa - SIP-LAB')
 @section('header-title', 'Dashboard Mahasiswa')
@@ -104,7 +104,7 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                     <h5 class="fw-bold text-dark mb-1">Ketersediaan Ruang Laboratorium</h5>
-                    <p class="text-muted small mb-0">Status operasional ruang laboratorium riset</p>
+                    <p class="text-muted small mb-0" id="katalog-sub-label">Status operasional ruang laboratorium riset</p>
                 </div>
                 <a href="{{ route('student.inventory') }}" class="btn btn-sm btn-brand-outline">
                     Semua Katalog <i class="bi bi-arrow-right ms-1"></i>
@@ -123,7 +123,7 @@
                     </thead>
                     <tbody>
                         @forelse($rooms as $room)
-                            <tr>
+                            <tr data-room-nama="{{ $room->nama_ruangan }}">
                                 <td>
                                     <div class="fw-bold text-dark">{{ $room->nama_ruangan }}</div>
                                     <small class="text-muted">{{ $room->kode_ruangan }}</small>
@@ -140,13 +140,14 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if(strtolower($room->status) === 'tersedia')
-                                        <span class="badge-status badge-success">Tersedia</span>
-                                    @else
-                                        <span class="badge-status badge-warning">{{ ucfirst($room->status) }}</span>
-                                    @endif
+                                    <span class="room-status-badge" data-default="{{ strtolower($room->status) }}">
+                                        @if(strtolower($room->status) === 'tersedia')
+                                            <span class="badge-status badge-success">Tersedia</span>
+                                        @else
+                                            <span class="badge-status badge-warning">{{ ucfirst($room->status) }}</span>
+                                        @endif
+                                    </span>
                                 </td>
-                            </tr>
                         @empty
                             <tr>
                                 <td colspan="4" class="text-center py-4 text-muted">Belum ada data laboratorium.</td>
@@ -158,7 +159,7 @@
         </div>
 
         <!-- Featured Assets Grid -->
-        <div class="card-custom p-4">
+        <div class="card-custom p-4 mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                     <h5 class="fw-bold text-dark mb-1">Peralatan Riset Siap Pakai</h5>
@@ -192,8 +193,96 @@
         </div>
     </div>
 
-    <!-- Right Column: Recent Bookings & Timeline -->
+    <!-- Right Column: Calendar + Recent Bookings & Timeline -->
     <div class="col-lg-5">
+
+        {{-- ── KALENDER PEMAKAIAN LAB ── --}}
+        <div class="card-custom p-4 mb-4" id="kalender-section">
+            {{-- Header --}}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-calendar3 text-primary me-1"></i> Kalender Pemakaian Lab
+                    </h6>
+                    <small class="text-muted">Jadwal peminjaman disetujui</small>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <button class="btn btn-sm btn-brand-outline px-2 py-1" id="btn-prev-month">
+                        <i class="bi bi-chevron-left" style="font-size:.7rem;"></i>
+                    </button>
+                    <span class="fw-semibold text-dark" id="cal-label"
+                          style="min-width:120px; text-align:center; font-size:.8rem;"></span>
+                    <button class="btn btn-sm btn-brand-outline px-2 py-1" id="btn-next-month">
+                        <i class="bi bi-chevron-right" style="font-size:.7rem;"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Day headers --}}
+            <div class="row g-0 text-center mb-1" style="border-bottom:1px solid #e2e8f0; padding-bottom:4px;">
+                @foreach(['Mi','Se','Se','Ra','Ka','Ju','Sa'] as $d)
+                    <div class="col" style="font-size:.65rem; font-weight:700; color:#94a3b8;">{{ $d }}</div>
+                @endforeach
+            </div>
+
+            {{-- Grid (JS renders) --}}
+            <div id="cal-grid" class="mb-2"></div>
+
+            {{-- Loading --}}
+            <div id="cal-loading" class="text-center py-2" style="display:none;">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            </div>
+
+            {{-- Legend --}}
+            <div class="d-flex gap-3 mb-3" style="font-size:.7rem; color:#94a3b8;">
+                <span>
+                    <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
+                                 background:#3b82f6;margin-right:3px;"></span>Ada jadwal
+                </span>
+                <span>
+                    <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
+                                 background:#dbeafe;border:1.5px solid #3b82f6;margin-right:3px;"></span>Hari ini
+                </span>
+            </div>
+
+            {{-- Detail / Placeholder --}}
+            <div id="cal-placeholder" class="text-center text-muted py-2" style="font-size:.78rem;">
+                <i class="bi bi-hand-index-thumb me-1 text-primary opacity-50"></i>
+                Pilih tanggal untuk melihat jadwal
+            </div>
+
+            <div id="cal-detail" style="display:none;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center text-primary"
+                         style="width:28px;height:28px;background:#eff6ff;flex-shrink:0;font-size:.8rem;">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark" style="font-size:.8rem;" id="cal-detail-title"></div>
+                        <div class="text-muted" style="font-size:.68rem;" id="cal-detail-sub"></div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0" style="font-size:.75rem;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ruangan</th>
+                                <th>Waktu</th>
+                                <th>Durasi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cal-detail-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="cal-empty" style="display:none;"
+                 class="text-center text-muted py-2" style="font-size:.78rem;">
+                <i class="bi bi-calendar-x me-1"></i>
+                Tidak ada jadwal pada tanggal ini.
+            </div>
+        </div>
+        {{-- ── END KALENDER ── --}}
         <div class="card-custom p-4 mb-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
@@ -266,3 +355,200 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    // ── Config ──────────────────────────────────────────────
+    const ENDPOINT = "{{ route('student.calendar.data') }}";
+    const MONTHS   = ['Januari','Februari','Maret','April','Mei','Juni',
+                      'Juli','Agustus','September','Oktober','November','Desember'];
+
+    let currentYear  = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1; // 1-based
+    let calendarData = {}; // keyed by "YYYY-MM-DD"
+    let selectedDate  = null;
+
+    // ── DOM refs ────────────────────────────────────────────
+    const label       = document.getElementById('cal-label');
+    const grid        = document.getElementById('cal-grid');
+    const loading     = document.getElementById('cal-loading');
+    const detail      = document.getElementById('cal-detail');
+    const detailTitle = document.getElementById('cal-detail-title');
+    const detailSub   = document.getElementById('cal-detail-sub');
+    const detailBody  = document.getElementById('cal-detail-body');
+    const empty       = document.getElementById('cal-empty');
+    const placeholder = document.getElementById('cal-placeholder');
+
+    document.getElementById('btn-prev-month').addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+        fetchAndRender();
+    });
+
+    document.getElementById('btn-next-month').addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+        fetchAndRender();
+    });
+
+    // ── Fetch ────────────────────────────────────────────────
+    function fetchAndRender() {
+        loading.style.display = '';
+        grid.innerHTML        = '';
+        hideDetail();
+
+        fetch(`${ENDPOINT}?year=${currentYear}&month=${currentMonth}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(json => {
+            calendarData = json.calendar || {};
+            renderGrid(json.year, json.month);
+        })
+        .catch(() => {
+            grid.innerHTML = '<p class="text-danger small text-center py-3">Gagal memuat data kalender.</p>';
+        })
+        .finally(() => { loading.style.display = 'none'; });
+    }
+
+    // ── Render calendar grid ─────────────────────────────────
+    function renderGrid(year, month) {
+        label.textContent = `${MONTHS[month - 1]} ${year}`;
+
+        const firstDay  = new Date(year, month - 1, 1).getDay(); // 0=Sun
+        const daysInMon = new Date(year, month, 0).getDate();
+        const today     = new Date();
+        const todayStr  = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+        let html = '<div class="row g-1">';
+
+        // Leading empty cells
+        for (let i = 0; i < firstDay; i++) {
+            html += '<div class="col"></div>';
+        }
+
+        for (let d = 1; d <= daysInMon; d++) {
+            const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const hasSchedule = calendarData[dateStr] && calendarData[dateStr].length > 0;
+            const isToday     = dateStr === todayStr;
+            const isSelected  = dateStr === selectedDate;
+
+            let dayClass  = 'cal-day';
+            if (isToday)    dayClass += ' cal-day-today';
+            if (isSelected) dayClass += ' cal-day-selected';
+
+            html += `<div class="col d-flex justify-content-center mb-1">
+                <button class="${dayClass}" data-date="${dateStr}"
+                    style="width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+                           font-size:.82rem;font-weight:600;position:relative;
+                           background:${isSelected ? '#3b82f6' : (isToday ? '#eff6ff' : 'transparent')};
+                           color:${isSelected ? '#fff' : (isToday ? '#3b82f6' : '#334155')};
+                           transition:background .15s;">
+                    ${d}
+                    ${hasSchedule ? `<span style="position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+                        width:5px;height:5px;border-radius:50%;
+                        background:${isSelected ? '#fff' : '#3b82f6'};"></span>` : ''}
+                </button>
+            </div>`;
+
+            // Break row every 7 days
+            if ((firstDay + d) % 7 === 0) {
+                html += '</div><div class="row g-1">';
+            }
+        }
+
+        html += '</div>';
+        grid.innerHTML = html;
+
+        // Attach click listeners
+        grid.querySelectorAll('.cal-day').forEach(btn => {
+            btn.addEventListener('click', function () {
+                selectedDate = this.dataset.date;
+                renderGrid(year, month);   // re-render to reflect selection
+                showDetail(selectedDate);
+            });
+        });
+    }
+
+    // ── Catalog status sync ──────────────────────────────────
+    function syncCatalogStatus(occupiedSet) {
+        document.querySelectorAll('tr[data-room-nama]').forEach(function(row) {
+            var badge = row.querySelector('.room-status-badge');
+            if (!badge) return;
+            var nama = row.dataset.roomNama.trim().toLowerCase();
+            var def  = (badge.dataset.default || 'tersedia').trim().toLowerCase();
+            if (occupiedSet && occupiedSet.has(nama)) {
+                badge.innerHTML = '<span class="badge-status badge-danger">Terpakai</span>';
+                row.style.background = '#fff5f5';
+            } else {
+                if (def === 'tersedia') {
+                    badge.innerHTML = '<span class="badge-status badge-success">Tersedia</span>';
+                } else {
+                    badge.innerHTML = '<span class="badge-status badge-warning">' + def.charAt(0).toUpperCase() + def.slice(1) + '</span>';
+                }
+                row.style.background = '';
+            }
+        });
+    }
+
+    // ── Detail panel ─────────────────────────────────────────
+    function showDetail(dateStr) {
+        var schedules = calendarData[dateStr];
+        var d     = new Date(dateStr + 'T00:00:00');
+        var days  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+        var dateLabel = days[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+        detailTitle.textContent = dateLabel;
+        var totalJadwal = schedules ? schedules.length : 0;
+        if (detailSub) detailSub.textContent = totalJadwal + ' jadwal pemakaian';
+        if (placeholder) placeholder.style.display = 'none';
+
+        // Sync catalog badges
+        var occupied = new Set(schedules ? schedules.map(function(s){ return s.ruangan.trim().toLowerCase(); }) : []);
+        syncCatalogStatus(occupied);
+
+        // Update catalog subtitle
+        var subLabel = document.getElementById('katalog-sub-label');
+        if (subLabel) {
+            if (schedules && schedules.length > 0) {
+                subLabel.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-calendar-event me-1"></i>Tanggal: ' + dateLabel + '</span>';
+            } else {
+                subLabel.textContent = 'Status operasional ruang laboratorium riset';
+            }
+        }
+
+        if (!schedules || schedules.length === 0) {
+            detail.style.display = 'none';
+            empty.style.display  = '';
+            return;
+        }
+        empty.style.display = 'none';
+        var rows = '';
+        schedules.forEach(function(s) {
+            rows += '<tr>' +
+                '<td><div class="fw-semibold text-dark" style="font-size:.82rem;">' + s.ruangan + '</div>' +
+                '<small class="text-muted">' + s.kode_ruangan + '</small></td>' +
+                '<td class="text-nowrap" style="font-size:.82rem;">' + s.jam_mulai + ' \u2013 ' + s.jam_selesai + '</td>' +
+                '<td class="text-nowrap" style="font-size:.82rem;">' + s.durasi + '</td>' +
+                '<td><span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill" style="font-size:.72rem;">Terpakai</span></td>' +
+                '</tr>';
+        });
+        detailBody.innerHTML  = rows;
+        detail.style.display  = '';
+    }
+
+    function hideDetail() {
+        detail.style.display = 'none';
+        empty.style.display  = 'none';
+        if (placeholder) placeholder.style.display = '';
+        selectedDate = null;
+        syncCatalogStatus(null);
+        var subLabel = document.getElementById('katalog-sub-label');
+        if (subLabel) subLabel.textContent = 'Status operasional ruang laboratorium riset';
+    }
+
+    // ── Init ─────────────────────────────────────────────────
+    fetchAndRender();
+})();
+</script>
+@endpush
