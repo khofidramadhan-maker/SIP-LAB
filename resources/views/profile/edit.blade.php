@@ -49,6 +49,13 @@
                                value="{{ old('nim', $user->nim) }}" maxlength="20">
                         @error('nim') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
+                    <div class="mb-3">
+                        <label for="program_study" class="form-label">Program Studi / Jurusan</label>
+                        <input id="program_study" name="program_study" type="text"
+                               class="form-control @error('program_study') is-invalid @enderror"
+                               value="{{ old('program_study', $user->program_study) }}" maxlength="255">
+                        @error('program_study') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
                 @endif
 
                 <div class="mb-4">

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -54,24 +53,26 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
+            'nama' => ['required', 'string', 'max:100'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'student_number' => ['nullable', 'string', 'max:50'],
-            'program_study' => ['nullable', 'string', 'max:255'],
+            'nim' => ['required', 'string', 'max:20', 'unique:users,nim'],
+            'program_study' => ['required', 'string', 'max:255'],
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
+            'nama' => $validated['nama'],
+            'name' => $validated['nama'],
+            'nim' => $validated['nim'],
+            'program_study' => $validated['program_study'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
             'role' => 'mahasiswa',
-            'student_number' => $validated['student_number'] ?? null,
-            'program_study' => $validated['program_study'] ?? null,
-            'status' => 'active',
+            'status_aktif' => 'aktif',
         ]);
 
         Auth::login($user);
+        $request->session()->regenerate();
 
         return redirect()->route('student.dashboard');
     }

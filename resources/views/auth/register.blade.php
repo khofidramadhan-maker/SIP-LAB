@@ -26,7 +26,7 @@
                                 <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 12px 0 0 12px; border-color: #e2e8f0;">
                                     <i class="bi bi-person"></i>
                                 </span>
-                                <input type="text" name="name" class="form-control border-start-0 ps-0" placeholder="Contoh: Khofid Ramadhan" value="{{ old('name') }}" required style="border-radius: 0 12px 12px 0;">
+                                <input type="text" name="nama" class="form-control border-start-0 ps-0" placeholder="Contoh: Khofid Ramadhan" value="{{ old('nama') }}" required style="border-radius: 0 12px 12px 0;">
                             </div>
                         </div>
 
@@ -46,7 +46,7 @@
                                 <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 12px 0 0 12px; border-color: #e2e8f0;">
                                     <i class="bi bi-card-text"></i>
                                 </span>
-                                <input type="text" name="student_number" class="form-control border-start-0 ps-0" placeholder="Contoh: 240101082" value="{{ old('student_number') }}" required style="border-radius: 0 12px 12px 0;">
+                                <input type="text" name="nim" class="form-control border-start-0 ps-0" placeholder="Contoh: 240101082" value="{{ old('nim') }}" required style="border-radius: 0 12px 12px 0;">
                             </div>
                         </div>
 
@@ -66,7 +66,7 @@
                                 <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 12px 0 0 12px; border-color: #e2e8f0;">
                                     <i class="bi bi-lock"></i>
                                 </span>
-                                <input type="password" name="password" class="form-control border-start-0 ps-0" placeholder="Minimal 6 karakter" required style="border-radius: 0 12px 12px 0;">
+                                <input type="password" name="password" class="form-control border-start-0 ps-0" placeholder="Minimal 8 karakter" required style="border-radius: 0 12px 12px 0;">
                             </div>
                         </div>
 

@@ -17,6 +17,7 @@ class User extends Authenticatable
         'nama',
         'name',
         'nim',
+        'program_study',
         'email',
         'username',
         'password',

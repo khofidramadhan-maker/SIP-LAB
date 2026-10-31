@@ -77,7 +77,10 @@ class SipLabEndpointsTest extends TestCase
             ->assertDontSee('Manajemen Pengguna');
         $this->get('/mahasiswa/inventaris')->assertOk();
         $this->get('/mahasiswa/riwayat')->assertOk();
-        $this->get('/mahasiswa/peminjaman/create')->assertOk();
+        $this->get('/mahasiswa/peminjaman/create')
+            ->assertOk()
+            ->assertDontSee('Periksa Ketersediaan Ruangan')
+            ->assertSee('Permohonan Peminjaman');
         $this->get(route('booking.show', $booking))->assertOk();
         $this->get('/mahasiswa/notifikasi')->assertOk();
         $this->get('/profil')->assertOk();
@@ -146,17 +149,68 @@ class SipLabEndpointsTest extends TestCase
         $this->get(route('student.dashboard'))->assertOk();
     }
 
+    public function test_multiple_students_can_register_and_access_the_student_portal(): void
+    {
+        $students = [
+            [
+                'nama' => 'Mahasiswa Pendaftar Satu',
+                'email' => 'pendaftar1@siplab.test',
+                'nim' => '240101101',
+                'program_study' => 'Teknik Informatika',
+                'password' => 'password-123',
+                'password_confirmation' => 'password-123',
+            ],
+            [
+                'nama' => 'Mahasiswa Pendaftar Dua',
+                'email' => 'pendaftar2@siplab.test',
+                'nim' => '240101102',
+                'program_study' => 'Sistem Informasi',
+                'password' => 'password-123',
+                'password_confirmation' => 'password-123',
+            ],
+        ];
+
+        foreach ($students as $studentData) {
+            $this->get(route('register'))->assertOk();
+            $this->post(route('register'), $studentData)
+                ->assertRedirect(route('student.dashboard'));
+
+            $this->assertAuthenticated();
+            $this->assertDatabaseHas('users', [
+                'nama' => $studentData['nama'],
+                'nim' => $studentData['nim'],
+                'program_study' => $studentData['program_study'],
+                'email' => $studentData['email'],
+                'role' => 'mahasiswa',
+                'status_aktif' => 'aktif',
+            ]);
+            $user = User::where('email', $studentData['email'])->firstOrFail();
+            $this->assertTrue(Hash::check($studentData['password'], $user->password));
+            $this->get(route('student.dashboard'))->assertOk();
+            $this->post(route('logout'))->assertRedirect(route('login'));
+            $this->post(route('login'), [
+                'email' => $studentData['email'],
+                'password' => $studentData['password'],
+            ])->assertRedirect(route('student.dashboard'));
+            $this->get(route('student.dashboard'))->assertOk();
+            $this->post(route('logout'))->assertRedirect(route('login'));
+        }
+
+        $this->assertSame(4, User::where('role', 'mahasiswa')->count());
+    }
+
     public function test_profile_updates_only_columns_available_for_each_role_and_verifies_password(): void
     {
         $this->actingAs($this->student)
             ->get('/profil')
             ->assertOk()
             ->assertSee('NIM')
-            ->assertDontSee('Program Studi');
+            ->assertSee('Program Studi');
 
         $this->patch('/profil', [
             'nama' => 'Mahasiswa Diperbarui',
             'nim' => '240101999',
+            'program_study' => 'Teknik Komputer',
             'email' => $this->student->email,
             'current_password' => 'password',
             'password' => 'new-password-123',
@@ -168,6 +222,7 @@ class SipLabEndpointsTest extends TestCase
             'nama' => 'Mahasiswa Diperbarui',
             'name' => 'Mahasiswa Diperbarui',
             'nim' => '240101999',
+            'program_study' => 'Teknik Komputer',
         ]);
         $this->assertTrue(Hash::check('new-password-123', $this->student->fresh()->password));
 

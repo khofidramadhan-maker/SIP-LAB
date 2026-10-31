@@ -27,6 +27,7 @@ class ProfileController extends Controller
 
         if ($user->role === 'mahasiswa') {
             $rules['nim'] = ['nullable', 'string', 'max:20', Rule::unique('users', 'nim')->ignore($user->id)];
+            $rules['program_study'] = ['nullable', 'string', 'max:255'];
         }
 
         $validated = $request->validate($rules);
@@ -37,6 +38,7 @@ class ProfileController extends Controller
 
         if ($user->role === 'mahasiswa') {
             $user->nim = $validated['nim'] ?? null;
+            $user->program_study = $validated['program_study'] ?? null;
         }
 
         if (!empty($validated['password'])) {

@@ -9,69 +9,6 @@
 
 <div class="booking-page">
 
-    {{-- FILTER KETERSEDIAAN --}}
-    <div class="card-custom booking-filter-card mb-4">
-        <div class="booking-heading mb-4">
-            <div class="booking-icon">
-                <i class="bi bi-calendar3"></i>
-            </div>
-            <div>
-                <h5>Periksa Ketersediaan Ruangan</h5>
-                <p>Periksa jadwal penggunaan berdasarkan tanggal dan waktu.</p>
-            </div>
-        </div>
-
-        <form id="availabilityFilterForm" method="GET"
-              action="{{ route('booking.create') }}">
-
-            <div class="row g-3 align-items-end">
-                <div class="col-12 col-md-4">
-                    <label for="filter_date" class="form-label">
-                        Tanggal <span class="text-danger">*</span>
-                    </label>
-                    <input type="date" id="filter_date" name="date"
-                           class="form-control"
-                           value="{{ request('date') }}"
-                           required>
-                </div>
-
-                <div class="col-6 col-md-3">
-                    <label for="filter_start" class="form-label">
-                        Jam Mulai <span class="text-danger">*</span>
-                    </label>
-                    <input type="time" id="filter_start" name="start"
-                           class="form-control"
-                           value="{{ request('start') }}"
-                           required>
-                </div>
-
-                <div class="col-6 col-md-3">
-                    <label for="filter_end" class="form-label">
-                        Jam Selesai <span class="text-danger">*</span>
-                    </label>
-                    <input type="time" id="filter_end" name="end"
-                           class="form-control"
-                           value="{{ request('end') }}"
-                           required>
-                </div>
-
-                <div class="col-12 col-md-2">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-filter flex-grow-1">
-                            <i class="bi bi-search"></i> Periksa
-                        </button>
-                        <a href="{{ route('booking.create') }}"
-                           class="btn btn-filter-reset"
-                           aria-label="Reset filter"
-                           title="Reset filter">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </form>
-    </div>
-
     <div class="row g-4 align-items-start">
 
         {{-- FORM PENGAJUAN --}}
