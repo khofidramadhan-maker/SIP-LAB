@@ -30,9 +30,8 @@
                     </div>
 
                     <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="mb-1">
                             <label class="form-label mb-0">Kata Sandi</label>
-                            <span class="text-muted small" style="font-size: 0.76rem;">Default: <code>password</code></span>
                         </div>
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 12px 0 0 12px; border-color: #e2e8f0;">

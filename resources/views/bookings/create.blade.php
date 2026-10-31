@@ -145,10 +145,15 @@
                                     Jam Mulai <span class="text-danger">*</span>
                                 </label>
 
-                                <input type="time" id="jam_mulai"
+                                <input type="text" id="jam_mulai"
                                        name="jam_mulai"
                                        class="form-control @error('jam_mulai') is-invalid @enderror"
                                        value="{{ old('jam_mulai', request('start', '08:00')) }}"
+                                       placeholder="HH:MM"
+                                       inputmode="numeric"
+                                       pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]"
+                                       maxlength="5"
+                                       title="Masukkan waktu 24 jam dengan format HH:MM, misalnya 14:30."
                                        required>
 
                                 @error('jam_mulai')
@@ -161,10 +166,15 @@
                                     Jam Selesai <span class="text-danger">*</span>
                                 </label>
 
-                                <input type="time" id="jam_selesai"
+                                <input type="text" id="jam_selesai"
                                        name="jam_selesai"
                                        class="form-control @error('jam_selesai') is-invalid @enderror"
                                        value="{{ old('jam_selesai', request('end', '16:00')) }}"
+                                       placeholder="HH:MM"
+                                       inputmode="numeric"
+                                       pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]"
+                                       maxlength="5"
+                                       title="Masukkan waktu 24 jam dengan format HH:MM, misalnya 14:30."
                                        required>
 
                                 @error('jam_selesai')

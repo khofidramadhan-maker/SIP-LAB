@@ -2,20 +2,107 @@
 
 @section('title', 'Detail Peminjaman - SIP-LAB')
 @section('header-title', 'Detail Pengajuan Peminjaman')
-@section('header-sub', 'Informasi lengkap jadwal penggunaan fasilitas, relasi alat, dan riwayat persetujuan')
+@section('header-sub', 'Periksa data pemohon, jadwal, fasilitas, dan dokumen pendukung pengajuan')
 
 @section('content')
-<div class="row g-4">
+<style>
+    .booking-proof-print-header {
+        display: none;
+    }
+
+    .booking-document-print {
+        display: none;
+    }
+
+    @media print {
+        @page {
+            size: A4;
+            margin: 16mm;
+        }
+
+        body {
+            background: #fff !important;
+            color: #111827 !important;
+        }
+
+        .sidebar,
+        .sidebar-backdrop,
+        .topbar-header,
+        .booking-no-print,
+        .booking-approval-history {
+            display: none !important;
+        }
+
+        .app-wrapper,
+        .main-wrapper,
+        .page-content,
+        .booking-detail-layout {
+            display: block !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .booking-proof-column {
+            width: 100% !important;
+        }
+
+        .booking-proof-card {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .booking-proof-print-header {
+            display: block !important;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #1e293b;
+        }
+
+        .booking-proof-card .bg-light-subtle {
+            background: #fff !important;
+        }
+
+        .booking-proof-card .border {
+            border-color: #cbd5e1 !important;
+        }
+
+        .booking-document-link {
+            display: none !important;
+        }
+
+        .booking-document-print {
+            display: block !important;
+        }
+    }
+</style>
+
+<div class="row g-4 booking-detail-layout">
     <!-- Main Detail Info -->
-    <div class="col-lg-8">
-        <div class="card-custom p-4 p-md-5 mb-4">
+    <div class="col-lg-8 booking-proof-column">
+        <div class="card-custom p-4 p-md-5 mb-4 booking-proof-card">
+            <div class="booking-proof-print-header">
+                <div class="fw-bold fs-4 text-dark">SIP-LAB</div>
+                <div class="text-muted">Bukti Pengajuan Peminjaman Laboratorium</div>
+                <div class="small text-muted mt-2">Dicetak pada {{ now()->translatedFormat('d F Y, H:i') }} WIB</div>
+            </div>
+
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 pb-3 mb-4 border-bottom">
                 <div>
                     <span class="badge bg-light text-muted border px-2 py-1 rounded-pill small mb-2">
                         {{ $booking->kode_peminjaman }}
                     </span>
-                    <h4 class="fw-bold text-dark mb-1">{{ $booking->keperluan }}</h4>
-                    <p class="text-muted small mb-0">Pemohon: <strong class="text-dark">{{ $booking->user->nama ?? $booking->user->name }}</strong> (NIM: {{ $booking->user->nim ?? '-' }})</p>
+                    <h4 class="fw-bold text-dark mb-1">Bukti Peminjaman Laboratorium</h4>
+                    <p class="text-muted small mb-0">
+                        Pemohon: <strong class="text-dark">{{ $booking->user->nama ?? $booking->user->name }}</strong>
+                        &bull; NIM: {{ $booking->user->nim ?? '-' }}
+                        @if($booking->user->program_study)
+                            &bull; Program Studi: {{ $booking->user->program_study }}
+                        @endif
+                    </p>
                 </div>
 
                 <div>
@@ -40,7 +127,7 @@
                 <!-- Ruang Lab -->
                 <div class="col-md-6">
                     <div class="p-3 rounded-3 bg-light-subtle border" style="border-color: #e2e8f0 !important;">
-                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Ruang Laboratorium (detail_ruangan)</small>
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Ruang Laboratorium</small>
                         @php $ruang = $booking->detailRuangan->first()?->ruangan; @endphp
                         <div class="fw-bold text-dark fs-6 mt-1">{{ $ruang?->nama_ruangan ?? 'Ruang Tidak Terdata' }}</div>
                         <div class="text-muted small">
@@ -65,15 +152,15 @@
                 <!-- Keperluan -->
                 <div class="col-12">
                     <div class="p-3 rounded-3 bg-light-subtle border" style="border-color: #e2e8f0 !important;">
-                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Keperluan Lengkap</small>
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Keperluan Peminjaman</small>
                         <p class="text-dark small mt-2 mb-0" style="line-height: 1.6;">{{ $booking->keperluan }}</p>
                     </div>
                 </div>
 
-                <!-- Detail Alat (detail_alat) -->
+                <!-- Detail Alat -->
                 <div class="col-md-6">
                     <div class="p-3 rounded-3 bg-light-subtle border" style="border-color: #e2e8f0 !important;">
-                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Peralatan Dipinjam (detail_alat)</small>
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Peralatan yang Dipinjam</small>
                         @if($booking->detailAlat->count() > 0)
                             <ul class="list-unstyled mb-0 mt-2">
                                 @foreach($booking->detailAlat as $item)
@@ -98,9 +185,13 @@
                         <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Dokumen Pendukung</small>
                         @if($booking->dokumen_pendukung)
                             <div class="mt-2">
-                                <a href="{{ asset('storage/' . $booking->dokumen_pendukung) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                <a href="{{ asset('storage/' . $booking->dokumen_pendukung) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 booking-document-link">
                                     <i class="bi bi-file-earmark-pdf"></i> Lihat Dokumen Pendukung
                                 </a>
+                                <div class="booking-document-print small text-dark mt-2">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>
+                                    Terlampir: {{ basename($booking->dokumen_pendukung) }}
+                                </div>
                             </div>
                         @else
                             <div class="text-muted small mt-1">Tidak ada lampiran dokumen PDF.</div>
@@ -110,7 +201,7 @@
             </div>
 
             @if($booking->serahTerima || $booking->pengembalian)
-                <div class="row g-3 mb-4">
+                <div class="row g-3 mb-4 booking-no-print">
                     @if($booking->serahTerima)
                         <div class="col-12">
                             <div class="p-3 rounded-3 bg-light-subtle border">
@@ -149,7 +240,7 @@
             @endif
 
             <!-- Back & Print Buttons -->
-            <div class="d-flex justify-content-between pt-3 border-top">
+            <div class="d-flex justify-content-between pt-3 border-top booking-no-print">
                 @if(Auth::user()->role === 'mahasiswa')
                     <a href="{{ route('student.history') }}" class="btn btn-brand-outline">
                         <i class="bi bi-arrow-left"></i> Kembali ke Riwayat
@@ -172,7 +263,7 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card-custom p-4 mb-4">
+        <div class="card-custom p-4 mb-4 booking-approval-history">
             <h6 class="fw-bold text-dark mb-4 d-flex align-items-center gap-2">
                 <i class="bi bi-clipboard2-check-fill text-primary"></i> Keputusan Persetujuan
             </h6>

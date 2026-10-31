@@ -80,8 +80,22 @@ class SipLabEndpointsTest extends TestCase
         $this->get('/mahasiswa/peminjaman/create')
             ->assertOk()
             ->assertDontSee('Periksa Ketersediaan Ruangan')
+            ->assertSee('type="text" id="jam_mulai"', false)
+            ->assertSee('type="text" id="jam_selesai"', false)
+            ->assertSee('placeholder="HH:MM"', false)
+            ->assertSee('pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]"', false)
+            ->assertSee('id="jam_mulai"', false)
+            ->assertSee('id="jam_selesai"', false)
             ->assertSee('Permohonan Peminjaman');
-        $this->get(route('booking.show', $booking))->assertOk();
+        $this->get(route('booking.show', $booking))
+            ->assertOk()
+            ->assertSee('Bukti Pengajuan Peminjaman Laboratorium')
+            ->assertSee('Ruang Laboratorium')
+            ->assertSee('Keperluan Peminjaman')
+            ->assertSee('Peralatan yang Dipinjam')
+            ->assertSee('booking-approval-history', false)
+            ->assertSee('window.print()', false)
+            ->assertDontSee('Ruang Laboratorium (detail_ruangan)');
         $this->get('/mahasiswa/notifikasi')->assertOk();
         $this->get('/profil')->assertOk();
 
