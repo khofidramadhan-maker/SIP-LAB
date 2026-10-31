@@ -150,7 +150,7 @@ class DemoSeeder extends Seeder
             ]
         );
 
-        // 4. Sample Peminjaman 1: Disetujui
+        // 4. Sample Peminjaman 1: Selesai
         $pinjam1 = Peminjaman::firstOrCreate(
             ['kode_peminjaman' => 'PINJAM-202610-001'],
             [
@@ -159,9 +159,10 @@ class DemoSeeder extends Seeder
                 'jam_mulai' => '08:00:00',
                 'jam_selesai' => '12:00:00',
                 'keperluan' => 'Pengujian Model Deep Learning untuk Skripsi Tugas Akhir',
-                'status' => 'Disetujui',
+                'status' => 'Selesai',
             ]
         );
+        $pinjam1->update(['status' => 'Selesai']);
         DetailRuangan::firstOrCreate(['peminjaman_id' => $pinjam1->id, 'ruangan_id' => $room1->id]);
         $detailAlat1 = DetailAlat::firstOrCreate([
             'peminjaman_id' => $pinjam1->id,
@@ -169,6 +170,7 @@ class DemoSeeder extends Seeder
             'jumlah' => 1,
             'kondisi_awal' => 'baik',
         ]);
+        $detailAlat1->update(['kondisi_akhir' => 'kabel_longgar']);
         Persetujuan::firstOrCreate([
             'peminjaman_id' => $pinjam1->id,
             'user_id' => $staff->id,
@@ -177,16 +179,7 @@ class DemoSeeder extends Seeder
             'catatan' => 'Kelengkapan berkas valid dan jadwal tersedia.',
             'tanggal' => now(),
         ]);
-        Persetujuan::firstOrCreate([
-            'peminjaman_id' => $pinjam1->id,
-            'user_id' => $head->id,
-            'tingkat' => '2',
-            'keputusan' => 'disetujui',
-            'catatan' => 'Disahkan untuk penelitian skripsi.',
-            'tanggal' => now(),
-        ]);
-
-        // 5. Sample Peminjaman 2: Menunggu Verifikasi
+        // 5. Sample Peminjaman 2: Menunggu Pemeriksaan Staf Sarpras
         $pinjam2 = Peminjaman::firstOrCreate(
             ['kode_peminjaman' => 'PINJAM-202610-002'],
             [
@@ -195,9 +188,10 @@ class DemoSeeder extends Seeder
                 'jam_mulai' => '13:00:00',
                 'jam_selesai' => '17:00:00',
                 'keperluan' => 'Praktikum Mandiri Sensor Lingkungan & Kalibrasi IoT',
-                'status' => 'Menunggu Verifikasi',
+                'status' => 'Menunggu Pemeriksaan Staf Sarpras',
             ]
         );
+        $pinjam2->update(['status' => 'Menunggu Pemeriksaan Staf Sarpras']);
         DetailRuangan::firstOrCreate(['peminjaman_id' => $pinjam2->id, 'ruangan_id' => $room2->id]);
         DetailAlat::firstOrCreate([
             'peminjaman_id' => $pinjam2->id,
@@ -206,7 +200,7 @@ class DemoSeeder extends Seeder
             'kondisi_awal' => 'baik',
         ]);
 
-        // 6. Sample Peminjaman 3: Menunggu Persetujuan Kepala Lab
+        // 6. Sample Peminjaman 3: Menunggu Pemeriksaan Staf Sarpras
         $pinjam3 = Peminjaman::firstOrCreate(
             ['kode_peminjaman' => 'PINJAM-202610-003'],
             [
@@ -215,18 +209,11 @@ class DemoSeeder extends Seeder
                 'jam_mulai' => '09:00:00',
                 'jam_selesai' => '15:00:00',
                 'keperluan' => 'Simulasi Penetrasi Jaringan & Audit Router Cisco',
-                'status' => 'Menunggu Persetujuan Kepala Lab',
+                'status' => 'Menunggu Pemeriksaan Staf Sarpras',
             ]
         );
+        $pinjam3->update(['status' => 'Menunggu Pemeriksaan Staf Sarpras']);
         DetailRuangan::firstOrCreate(['peminjaman_id' => $pinjam3->id, 'ruangan_id' => $room3->id]);
-        Persetujuan::firstOrCreate([
-            'peminjaman_id' => $pinjam3->id,
-            'user_id' => $staff->id,
-            'tingkat' => '1',
-            'keputusan' => 'disetujui',
-            'catatan' => 'Sarpras aman dan telah diverifikasi staf.',
-            'tanggal' => now(),
-        ]);
 
         // 7. Serah Terima
         SerahTerima::firstOrCreate(
@@ -274,7 +261,7 @@ class DemoSeeder extends Seeder
         Notifikasi::firstOrCreate([
             'user_id' => $student->id,
             'peminjaman_id' => $pinjam1->id,
-            'pesan' => 'Permohonan peminjaman PINJAM-202610-001 di Laboratorium Riset AI & Software telah resmi disetujui Kepala Lab.',
+            'pesan' => 'Permohonan peminjaman PINJAM-202610-001 di Laboratorium Riset AI & Software telah disetujui Staf Sarpras.',
             'sudah_dibaca' => true,
         ]);
         Notifikasi::firstOrCreate([
@@ -294,11 +281,6 @@ class DemoSeeder extends Seeder
             'user_id' => $staff->id,
             'aktivitas' => 'Melakukan verifikasi berkas tingkat I untuk PINJAM-202610-001',
             'waktu' => now()->subHours(3),
-        ]);
-        LogAktivitas::firstOrCreate([
-            'user_id' => $head->id,
-            'aktivitas' => 'Mengesahkan persetujuan tingkat II untuk PINJAM-202610-001',
-            'waktu' => now()->subHour(),
         ]);
         LogAktivitas::firstOrCreate([
             'user_id' => $staff->id,

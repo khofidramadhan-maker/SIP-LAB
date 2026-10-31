@@ -182,6 +182,18 @@
             margin-top: auto;
         }
 
+        .sidebar-backdrop {
+            display: none;
+        }
+
+        .nav-item-link-button {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            font-family: inherit;
+            text-align: left;
+        }
+
         .user-profile-widget {
             display: flex;
             align-items: center;
@@ -634,6 +646,17 @@
             .sidebar.show {
                 transform: translateX(0);
             }
+            .sidebar-backdrop.show {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 1035;
+                width: 100%;
+                height: 100%;
+                padding: 0;
+                border: 0;
+                background: rgba(15, 23, 42, 0.45);
+            }
             .main-wrapper {
                 margin-left: 0;
             }
@@ -666,76 +689,101 @@
                     </div>
                 </a>
 
-                <!-- Navigation Links -->
-                <div class="sidebar-nav">
+                <nav class="sidebar-nav" aria-label="Navigasi utama">
                     @if(Auth::user()->role === 'mahasiswa')
-                        <div class="sidebar-nav-section">Menu Mahasiswa</div>
+                        <div class="sidebar-nav-section">Menu Utama</div>
                         <a class="nav-item-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}" href="{{ route('student.dashboard') }}">
-                            <i class="bi bi-grid-fill"></i>
-                            <span>Dashboard</span>
+                            <i class="bi bi-grid-fill"></i><span>Dashboard</span>
                         </a>
                         <a class="nav-item-link {{ request()->routeIs('student.inventory*') ? 'active' : '' }}" href="{{ route('student.inventory') }}">
-                            <i class="bi bi-box-seam-fill"></i>
-                            <span>Ruang & Inventaris</span>
-                        </a>
-                        <a class="nav-item-link {{ request()->routeIs('booking.create') ? 'active' : '' }}" href="{{ route('booking.create') }}">
-                            <i class="bi bi-calendar-plus-fill"></i>
-                            <span>Ajukan Peminjaman</span>
+                            <i class="bi bi-box-seam-fill"></i><span>Inventaris</span>
                         </a>
 
-                        <div class="sidebar-nav-section mt-2">Aktivitas</div>
-                        <a class="nav-item-link {{ request()->routeIs('student.history*') ? 'active' : '' }}" href="{{ route('student.history') }}">
-                            <i class="bi bi-clock-history"></i>
-                            <span>Riwayat Peminjaman</span>
+                        <div class="sidebar-nav-section mt-2">Peminjaman</div>
+                        <a class="nav-item-link {{ request()->routeIs('booking.create') ? 'active' : '' }}" href="{{ route('booking.create') }}">
+                            <i class="bi bi-calendar-plus-fill"></i><span>Ajukan Peminjaman</span>
                         </a>
+                        <a class="nav-item-link {{ request()->routeIs('student.history*') || request()->routeIs('booking.show') ? 'active' : '' }}" href="{{ route('student.history') }}">
+                            <i class="bi bi-clock-history"></i><span>Riwayat Peminjaman</span>
+                        </a>
+
+                        <div class="sidebar-nav-section mt-2">Lainnya</div>
                         <a class="nav-item-link {{ request()->routeIs('student.notifications*') ? 'active' : '' }}" href="{{ route('student.notifications') }}">
-                            <i class="bi bi-bell-fill"></i>
-                            <span>Notifikasi</span>
-                            @php $notifCount = Auth::user()->notifikasi()->where('sudah_dibaca', false)->count(); @endphp
+                            <i class="bi bi-bell-fill"></i><span>Notifikasi</span>
+                            @php($notifCount = Auth::user()->notifikasi()->where('sudah_dibaca', false)->count())
                             @if($notifCount > 0)
                                 <span class="badge bg-primary rounded-pill ms-auto" style="font-size:0.7rem;">{{ $notifCount }}</span>
                             @endif
                         </a>
-                    @elseif(Auth::user()->role === 'staff')
-                        <div class="sidebar-nav-section">Staf Sarpras</div>
-                        <a class="nav-item-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}" href="{{ route('staff.dashboard') }}">
-                            <i class="bi bi-speedometer2"></i>
-                            <span>Dashboard</span>
+                        <a class="nav-item-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.edit') }}">
+                            <i class="bi bi-person-circle"></i><span>Profil</span>
                         </a>
+                    @elseif(Auth::user()->role === 'staff')
+                        <div class="sidebar-nav-section">Menu Utama</div>
+                        <a class="nav-item-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}" href="{{ route('staff.dashboard') }}">
+                            <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                        </a>
+
+                        <div class="sidebar-nav-section mt-2">Operasional Peminjaman</div>
                         <a class="nav-item-link {{ request()->routeIs('staff.verification*') ? 'active' : '' }}" href="{{ route('staff.verification') }}">
-                            <i class="bi bi-check2-square"></i>
-                            <span>Antrean Verifikasi</span>
-                            @php $pendingCount = \App\Models\Peminjaman::whereIn('status', ['Menunggu Verifikasi', 'Perlu Revisi'])->count(); @endphp
+                            <i class="bi bi-check2-square"></i><span>Verifikasi Peminjaman</span>
+                            @php($pendingCount = \App\Models\Peminjaman::whereIn('status', ['Menunggu Verifikasi', 'Menunggu Pemeriksaan Staf Sarpras'])->count())
                             @if($pendingCount > 0)
                                 <span class="badge bg-warning text-dark rounded-pill ms-auto" style="font-size:0.7rem;">{{ $pendingCount }}</span>
                             @endif
                         </a>
-                        <a class="nav-item-link {{ request()->routeIs('staff.inventory*') ? 'active' : '' }}" href="{{ route('staff.inventory') }}">
-                            <i class="bi bi-box-seam"></i>
-                            <span>Katalog & Inventaris</span>
+                        <a class="nav-item-link {{ request()->routeIs('staff.handover.*') ? 'active' : '' }}" href="{{ route('staff.handover.index') }}">
+                            <i class="bi bi-box-arrow-up-right"></i><span>Serah Terima</span>
+                        </a>
+                        <a class="nav-item-link {{ request()->routeIs('staff.returns.*') ? 'active' : '' }}" href="{{ route('staff.returns.index') }}">
+                            <i class="bi bi-box-arrow-in-down"></i><span>Pengembalian</span>
+                        </a>
+
+                        <div class="sidebar-nav-section mt-2">Manajemen Data</div>
+                        <a class="nav-item-link {{ request()->routeIs('staff.ruangan.*') ? 'active' : '' }}" href="{{ route('staff.ruangan.index') }}">
+                            <i class="bi bi-buildings"></i><span>Manajemen Ruangan</span>
+                        </a>
+                        <a class="nav-item-link {{ request()->routeIs('staff.alat.*') ? 'active' : '' }}" href="{{ route('staff.alat.index') }}">
+                            <i class="bi bi-tools"></i><span>Manajemen Alat</span>
+                        </a>
+                        <a class="nav-item-link {{ request()->routeIs('staff.pengguna.*') ? 'active' : '' }}" href="{{ route('staff.pengguna.index') }}">
+                            <i class="bi bi-people"></i><span>Manajemen Pengguna</span>
+                        </a>
+
+                        <div class="sidebar-nav-section mt-2">Lainnya</div>
+                        <a class="nav-item-link {{ request()->routeIs('staff.riwayat') ? 'active' : '' }}" href="{{ route('staff.riwayat') }}">
+                            <i class="bi bi-journal-text"></i><span>Riwayat Perubahan Data</span>
+                        </a>
+                        <a class="nav-item-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.edit') }}">
+                            <i class="bi bi-person-circle"></i><span>Profil</span>
                         </a>
                     @elseif(Auth::user()->role === 'kepala_lab')
-                        <div class="sidebar-nav-section">Pimpinan Lab</div>
+                        <div class="sidebar-nav-section">Menu Utama</div>
                         <a class="nav-item-link {{ request()->routeIs('lab-head.dashboard') ? 'active' : '' }}" href="{{ route('lab-head.dashboard') }}">
-                            <i class="bi bi-bar-chart-steps"></i>
-                            <span>Dashboard</span>
+                            <i class="bi bi-bar-chart-steps"></i><span>Dashboard</span>
                         </a>
-                        <a class="nav-item-link {{ request()->routeIs('lab-head.approval*') ? 'active' : '' }}" href="{{ route('lab-head.approval') }}">
-                            <i class="bi bi-clipboard2-check-fill"></i>
-                            <span>Persetujuan Tingkat II</span>
-                            @php $headPending = \App\Models\Peminjaman::where('status', 'Menunggu Persetujuan Kepala Lab')->count(); @endphp
-                            @if($headPending > 0)
-                                <span class="badge bg-danger rounded-pill ms-auto" style="font-size:0.7rem;">{{ $headPending }}</span>
-                            @endif
-                        </a>
+
+                        <div class="sidebar-nav-section mt-2">Laporan</div>
                         <a class="nav-item-link {{ request()->routeIs('lab-head.reports*') ? 'active' : '' }}" href="{{ route('lab-head.reports') }}">
-                            <i class="bi bi-file-earmark-bar-graph-fill"></i>
-                            <span>Laporan & Audit Lab</span>
+                            <i class="bi bi-file-earmark-bar-graph-fill"></i><span>Laporan</span>
+                        </a>
+
+                        <div class="sidebar-nav-section mt-2">Lainnya</div>
+                        <a class="nav-item-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.edit') }}">
+                            <i class="bi bi-person-circle"></i><span>Profil</span>
                         </a>
                     @endif
-                </div>
 
-                <!-- Footer User Profile Widget & Logout -->
+                    <div class="sidebar-nav-section mt-2">Keluar</div>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="nav-item-link nav-item-link-button text-danger">
+                            <i class="bi bi-box-arrow-right"></i><span>Keluar Sistem</span>
+                        </button>
+                    </form>
+                </nav>
+
+                <!-- Footer User Profile Widget -->
                 <div class="sidebar-footer">
                     <div class="user-profile-widget">
                         <div class="user-avatar-circle">
@@ -746,15 +794,9 @@
                             <div class="user-role-badge">{{ str_replace('_', ' ', Auth::user()->role) }}</div>
                         </div>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="btn btn-brand-outline w-100 justify-content-center text-danger border-danger-subtle">
-                            <i class="bi bi-box-arrow-right"></i>
-                            <span>Keluar Sistem</span>
-                        </button>
-                    </form>
                 </div>
             </aside>
+            <button type="button" class="sidebar-backdrop" id="sidebarBackdrop" aria-label="Tutup menu"></button>
         @endauth
 
         <!-- Main Body Wrapper -->
@@ -763,7 +805,8 @@
                 <!-- Sticky Topbar Header -->
                 <header class="topbar-header">
                     <div class="d-flex align-items-center gap-3">
-                        <button class="btn btn-icon mobile-toggle-btn" id="sidebarToggleBtn" type="button">
+                        <button class="btn btn-icon mobile-toggle-btn" id="sidebarToggleBtn" type="button"
+                                aria-label="Buka menu navigasi" aria-controls="appSidebar" aria-expanded="false">
                             <i class="bi bi-list fs-5"></i>
                         </button>
                         <div class="topbar-title-section">
@@ -797,10 +840,15 @@
                                     <small class="text-muted">{{ Auth::user()->email }}</small>
                                 </li>
                                 <li>
+                                    <a class="dropdown-item py-2" href="{{ route('profile.edit') }}">
+                                        <i class="bi bi-person-circle me-2"></i> Profil
+                                    </a>
+                                </li>
+                                <li>
                                     <form method="POST" action="{{ route('logout') }}" class="m-0">
                                         @csrf
                                         <button type="submit" class="dropdown-item text-danger py-2">
-                                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                                            <i class="bi bi-box-arrow-right me-2"></i> Keluar Sistem
                                         </button>
                                     </form>
                                 </li>
@@ -854,9 +902,32 @@
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('appSidebar');
             const toggleBtn = document.getElementById('sidebarToggleBtn');
-            if (toggleBtn && sidebar) {
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (toggleBtn && sidebar && backdrop) {
+                const setSidebarOpen = function(isOpen) {
+                    sidebar.classList.toggle('show', isOpen);
+                    backdrop.classList.toggle('show', isOpen);
+                    toggleBtn.setAttribute('aria-expanded', String(isOpen));
+                };
+
                 toggleBtn.addEventListener('click', function() {
-                    sidebar.classList.toggle('show');
+                    setSidebarOpen(!sidebar.classList.contains('show'));
+                });
+
+                backdrop.addEventListener('click', function() {
+                    setSidebarOpen(false);
+                });
+
+                sidebar.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        setSidebarOpen(false);
+                    });
+                });
+
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') {
+                        setSidebarOpen(false);
+                    }
                 });
             }
         });

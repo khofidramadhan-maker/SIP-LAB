@@ -39,7 +39,7 @@
                 </div>
             </div>
             <div class="stat-card-footer text-primary">
-                <i class="bi bi-clock-history"></i> {{ Auth::user()->peminjaman()->where('status', 'Disetujui')->count() }} telah disetujui
+                <i class="bi bi-clock-history"></i> {{ Auth::user()->peminjaman()->whereIn('status', ['Disetujui', 'Sedang Dipinjam', 'Selesai'])->count() }} disetujui / selesai
             </div>
         </div>
     </div>
@@ -93,6 +93,26 @@
                 <a href="{{ route('student.notifications') }}" class="text-decoration-none text-muted">Lihat semua notif &rarr;</a>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card-custom p-3 p-md-4 mb-4">
+    <h5 class="fw-bold text-dark mb-3">Ringkasan Status Pengajuan</h5>
+    <div class="row g-3">
+        @foreach([
+            'Menunggu Pemeriksaan Staf Sarpras' => ['Menunggu Staf', 'text-warning'],
+            'Disetujui' => ['Disetujui', 'text-success'],
+            'Sedang Dipinjam' => ['Sedang Dipinjam', 'text-info'],
+            'Selesai' => ['Selesai', 'text-success'],
+            'Ditolak' => ['Ditolak', 'text-danger'],
+        ] as $status => [$label, $color])
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="p-3 h-100 rounded-3 border bg-white">
+                    <div class="small text-muted">{{ $label }}</div>
+                    <div class="fs-4 fw-bold {{ $color }}">{{ $bookingStatusCounts[$status] ?? 0 }}</div>
+                </div>
+            </div>
+        @endforeach
     </div>
 </div>
 
@@ -301,10 +321,12 @@
                         </div>
                         @if($booking->status === 'Disetujui')
                             <span class="badge-status badge-success">Disetujui</span>
-                        @elseif($booking->status === 'Menunggu Verifikasi')
+                        @elseif($booking->status === 'Sedang Dipinjam')
+                            <span class="badge-status badge-info">Sedang Dipinjam</span>
+                        @elseif($booking->status === 'Selesai')
+                            <span class="badge-status badge-success">Selesai</span>
+                        @elseif(in_array($booking->status, ['Menunggu Verifikasi', 'Menunggu Pemeriksaan Staf Sarpras'], true))
                             <span class="badge-status badge-pending">Verifikasi Staf</span>
-                        @elseif($booking->status === 'Menunggu Persetujuan Kepala Lab')
-                            <span class="badge-status badge-info">Persetujuan Kalab</span>
                         @elseif($booking->status === 'Perlu Revisi')
                             <span class="badge-status badge-warning">Perlu Revisi</span>
                         @else

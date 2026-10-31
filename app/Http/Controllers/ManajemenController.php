@@ -281,19 +281,28 @@ class ManajemenController extends Controller
 
     public function riwayat(Request $request)
     {
-        $jenisData = $request->query('jenis_data');
+        $dateToRules = ['nullable', 'date_format:Y-m-d'];
+        if ($request->filled('date_from')) {
+            $dateToRules[] = 'after_or_equal:date_from';
+        }
+
+        $filters = $request->validate([
+            'jenis_data' => ['nullable', 'in:ruangan,pengguna,alat'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => $dateToRules,
+        ]);
 
         $query = LogAktivitas::with('user')
             ->whereNotNull('jenis_data')
             ->orderByDesc('waktu');
 
-        if ($jenisData) {
-            $query->where('jenis_data', $jenisData);
-        }
+        $query->when($filters['jenis_data'] ?? null, fn ($builder, $type) => $builder->where('jenis_data', $type))
+            ->when($filters['date_from'] ?? null, fn ($builder, $date) => $builder->whereDate('waktu', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn ($builder, $date) => $builder->whereDate('waktu', '<=', $date));
 
         $logs = $query->paginate(20)->appends($request->query());
+        $jenisData = $filters['jenis_data'] ?? null;
 
-        return view('manajemen.riwayat', compact('logs', 'jenisData'));
+        return view('manajemen.riwayat', compact('logs', 'jenisData', 'filters'));
     }
 }
-

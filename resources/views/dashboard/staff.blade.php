@@ -83,14 +83,22 @@
             <h5 class="fw-bold text-dark mb-1">Antrean Verifikasi Tingkat I</h5>
             <p class="text-muted small mb-0">Periksa kelengkapan jadwal, kapasitas ruangan, dan dokumen pendukung mahasiswa</p>
         </div>
-        <a href="{{ route('staff.verification') }}" class="btn btn-brand-primary">
-            <i class="bi bi-check2-square"></i> Buka Antrean Lengkap ({{ $pending }})
-        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ route('staff.handover.index') }}" class="btn btn-brand-outline">
+                <i class="bi bi-box-arrow-up-right"></i> Serah Terima
+            </a>
+            <a href="{{ route('staff.returns.index') }}" class="btn btn-brand-outline">
+                <i class="bi bi-box-arrow-in-down"></i> Pengembalian
+            </a>
+            <a href="{{ route('staff.verification') }}" class="btn btn-brand-primary">
+                <i class="bi bi-check2-square"></i> Buka Antrean Lengkap ({{ $pending }})
+            </a>
+        </div>
     </div>
 
     @php
         $queueBookings = \App\Models\Peminjaman::with(['user', 'detailRuangan.ruangan', 'detailAlat.alat'])
-            ->whereIn('status', ['Menunggu Verifikasi', 'Perlu Revisi'])
+            ->whereIn('status', ['Menunggu Verifikasi', 'Menunggu Pemeriksaan Staf Sarpras'])
             ->latest()
             ->limit(5)
             ->get();
@@ -128,10 +136,8 @@
                             <small class="text-muted">{{ substr($booking->jam_mulai, 0, 5) }} - {{ substr($booking->jam_selesai, 0, 5) }} WIB</small>
                         </td>
                         <td>
-                            @if($booking->status === 'Menunggu Verifikasi')
+                            @if(in_array($booking->status, ['Menunggu Verifikasi', 'Menunggu Pemeriksaan Staf Sarpras'], true))
                                 <span class="badge-status badge-pending">Menunggu Staf</span>
-                            @else
-                                <span class="badge-status badge-warning">Perlu Revisi</span>
                             @endif
                         </td>
                         <td>
@@ -199,6 +205,29 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+</div>
+
+<div class="card-custom p-4 mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h5 class="fw-bold text-dark mb-1">Aktivitas Operasional Terbaru</h5>
+            <p class="text-muted small mb-0">Pembaruan aktivitas yang tercatat di sistem</p>
+        </div>
+        <a href="{{ route('staff.riwayat') }}" class="btn btn-sm btn-brand-outline">Riwayat Perubahan Data</a>
+    </div>
+    <div class="list-group list-group-flush">
+        @forelse($recentActivity as $activity)
+            <div class="list-group-item px-0 d-flex flex-wrap justify-content-between gap-2">
+                <div>
+                    <div class="fw-semibold text-dark">{{ $activity->aktivitas }}</div>
+                    <small class="text-muted">{{ $activity->user?->nama ?? $activity->user?->name ?? 'Sistem' }}</small>
+                </div>
+                <small class="text-muted">{{ \Carbon\Carbon::parse($activity->waktu)->format('d/m/Y H:i') }}</small>
+            </div>
+        @empty
+            <p class="text-muted small mb-0">Belum ada aktivitas yang tercatat.</p>
+        @endforelse
     </div>
 </div>
 @endsection

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Alat;
 use App\Models\KerusakanAlat;
+use App\Models\LogAktivitas;
 use App\Models\Peminjaman;
 use App\Models\Ruangan;
 use Illuminate\Http\Request;
@@ -19,10 +20,15 @@ class DashboardController extends Controller
             ->latest()
             ->limit(5)
             ->get();
+        $bookingStatusCounts = Peminjaman::query()
+            ->where('user_id', Auth::id())
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
         $rooms = Ruangan::latest()->limit(6)->get();
         $assets = Alat::latest()->limit(6)->get();
 
-        return view('dashboard.student', compact('bookings', 'rooms', 'assets'));
+        return view('dashboard.student', compact('bookings', 'bookingStatusCounts', 'rooms', 'assets'));
     }
 
     /**
@@ -35,7 +41,7 @@ class DashboardController extends Controller
 
         // All approved bookings in the requested month
         $bookings = Peminjaman::with(['detailRuangan.ruangan'])
-            ->where('status', 'Disetujui')
+            ->whereIn('status', ['Disetujui', 'Sedang Dipinjam'])
             ->whereYear('tanggal_pinjam', $year)
             ->whereMonth('tanggal_pinjam', $month)
             ->get();
@@ -78,23 +84,25 @@ class DashboardController extends Controller
 
     public function staffDashboard()
     {
-        $pending = Peminjaman::where('status', 'Menunggu Pemeriksaan Staf Sarpras')->count();
+        $pending = Peminjaman::whereIn('status', ['Menunggu Pemeriksaan Staf Sarpras', 'Menunggu Verifikasi'])->count();
         $approved = Peminjaman::where('status', 'Disetujui')->count();
         $rooms = Ruangan::count();
         $todayBookings = Peminjaman::whereDate('tanggal_pinjam', today())->count();
+        $recentActivity = LogAktivitas::with('user')->latest('waktu')->limit(5)->get();
 
-        return view('dashboard.staff', compact('pending', 'approved', 'rooms', 'todayBookings'));
+        return view('dashboard.staff', compact('pending', 'approved', 'rooms', 'todayBookings', 'recentActivity'));
     }
 
     public function labHeadDashboard()
     {
-        $pending = Peminjaman::where('status', 'Menunggu Persetujuan Kepala Lab')->count();
         $approved = Peminjaman::where('status', 'Disetujui')->count();
+        $decided = Peminjaman::whereIn('status', ['Disetujui', 'Ditolak'])->count();
         $incidents = KerusakanAlat::count();
         $rooms = Ruangan::count();
         $assets = Alat::count();
         $totalBookings = Peminjaman::count();
+        $recentActivity = LogAktivitas::with('user')->latest('waktu')->limit(5)->get();
 
-        return view('dashboard.lab-head', compact('pending', 'approved', 'incidents', 'rooms', 'assets', 'totalBookings'));
+        return view('dashboard.lab-head', compact('decided', 'approved', 'incidents', 'rooms', 'assets', 'totalBookings', 'recentActivity'));
     }
 }

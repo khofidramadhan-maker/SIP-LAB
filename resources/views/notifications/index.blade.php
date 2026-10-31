@@ -15,7 +15,10 @@
                     </div>
                     <div>
                         <h5 class="fw-bold text-dark mb-0">Semua Pemberitahuan</h5>
-                        <small class="text-muted">Total {{ $notifications->count() }} pesan notifikasi sistem</small>
+                        <small class="text-muted">
+                            {{ $notifications->count() }} notifikasi ·
+                            {{ $notifications->where('sudah_dibaca', false)->count() }} belum dibaca
+                        </small>
                     </div>
                 </div>
             </div>
@@ -43,6 +46,14 @@
                                     <i class="bi bi-arrow-right-circle me-1"></i> Lihat Rincian Pengajuan
                                 </a>
                             @endif
+                            @unless($notification->sudah_dibaca)
+                                <form method="POST" action="{{ route('student.notifications.read', $notification) }}" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-brand-outline py-1 px-3" style="font-size: 0.78rem;">
+                                        <i class="bi bi-check2 me-1"></i> Tandai sudah dibaca
+                                    </button>
+                                </form>
+                            @endunless
                         </div>
                     </div>
                 @empty

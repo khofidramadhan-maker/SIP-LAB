@@ -6,14 +6,15 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\LabHeadController;
 use App\Http\Controllers\ManajemenController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/home', [AuthController::class, 'home'])->name('legacy.home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -24,6 +25,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/profil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profil', [ProfileController::class, 'update'])->name('profile.update');
 
     // Role: Mahasiswa
     Route::middleware('role:mahasiswa')->group(function () {
@@ -32,17 +35,25 @@ Route::middleware('auth')->group(function () {
         Route::get('/mahasiswa/riwayat', [HistoryController::class, 'index'])->name('student.history');
         Route::get('/mahasiswa/peminjaman/create', [BookingController::class, 'create'])->name('booking.create');
         Route::post('/mahasiswa/peminjaman', [BookingController::class, 'store'])->name('booking.store');
-        Route::get('/mahasiswa/peminjaman/{booking}', [BookingController::class, 'show'])->name('booking.show');
         Route::get('/mahasiswa/notifikasi', [NotificationController::class, 'index'])->name('student.notifications');
+        Route::post('/mahasiswa/notifikasi/{notification}/dibaca', [NotificationController::class, 'markAsRead'])
+            ->name('student.notifications.read');
         // Calendar: AJAX endpoint to get approved bookings for a given month
         Route::get('/mahasiswa/kalender-data', [DashboardController::class, 'calendarData'])->name('student.calendar.data');
     });
+    Route::get('/mahasiswa/peminjaman/{booking}', [BookingController::class, 'show'])->name('booking.show');
 
     // Role: Staf Sarpras
     Route::middleware('role:staff')->group(function () {
         Route::get('/staff/dashboard', [DashboardController::class, 'staffDashboard'])->name('staff.dashboard');
         Route::get('/staff/verifikasi', [StaffController::class, 'index'])->name('staff.verification');
         Route::post('/staff/verifikasi/{booking}', [StaffController::class, 'verify'])->name('staff.verify');
+        Route::get('/staff/serah-terima', [StaffController::class, 'handoverIndex'])->name('staff.handover.index');
+        Route::get('/staff/serah-terima/{booking}', [StaffController::class, 'handoverForm'])->name('staff.handover.create');
+        Route::post('/staff/serah-terima/{booking}', [StaffController::class, 'handover'])->name('staff.handover.store');
+        Route::get('/staff/pengembalian', [StaffController::class, 'returnIndex'])->name('staff.returns.index');
+        Route::get('/staff/pengembalian/{booking}', [StaffController::class, 'returnForm'])->name('staff.returns.create');
+        Route::post('/staff/pengembalian/{booking}', [StaffController::class, 'returnBooking'])->name('staff.returns.store');
         Route::get('/staff/inventaris', [InventoryController::class, 'index'])->name('staff.inventory');
 
         // ── Manajemen Ruangan ──────────────────────────────────────────────
@@ -76,8 +87,6 @@ Route::middleware('auth')->group(function () {
     // Role: Kepala Laboratorium
     Route::middleware('role:kepala_lab')->group(function () {
         Route::get('/kepala-lab/dashboard', [DashboardController::class, 'labHeadDashboard'])->name('lab-head.dashboard');
-        Route::get('/kepala-lab/approval', [LabHeadController::class, 'index'])->name('lab-head.approval');
-        Route::post('/kepala-lab/approval/{booking}', [LabHeadController::class, 'decide'])->name('lab-head.decide');
         Route::get('/kepala-lab/laporan', [ReportController::class, 'index'])->name('lab-head.reports');
     });
 });

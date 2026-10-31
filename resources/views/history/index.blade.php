@@ -17,7 +17,7 @@
         <div class="stat-card p-3">
             <div class="stat-card-label">Disetujui</div>
             <div class="stat-card-value text-success" style="font-size: 1.6rem;">
-                {{ $bookings->where('status', 'Disetujui')->count() }}
+                {{ $bookings->whereIn('status', ['Disetujui', 'Sedang Dipinjam', 'Selesai'])->count() }}
             </div>
         </div>
     </div>
@@ -25,7 +25,7 @@
         <div class="stat-card p-3">
             <div class="stat-card-label">Proses Verifikasi</div>
             <div class="stat-card-value text-warning" style="font-size: 1.6rem;">
-                {{ $bookings->whereIn('status', ['Menunggu Verifikasi', 'Menunggu Persetujuan Kepala Lab'])->count() }}
+                {{ $bookings->whereIn('status', ['Menunggu Verifikasi', 'Menunggu Pemeriksaan Staf Sarpras'])->count() }}
             </div>
         </div>
     </div>
@@ -94,10 +94,12 @@
                         <td>
                             @if($booking->status === 'Disetujui')
                                 <span class="badge-status badge-success">Disetujui</span>
-                            @elseif($booking->status === 'Menunggu Verifikasi')
+                            @elseif($booking->status === 'Sedang Dipinjam')
+                                <span class="badge-status badge-info">Sedang Dipinjam</span>
+                            @elseif($booking->status === 'Selesai')
+                                <span class="badge-status badge-success">Selesai</span>
+                            @elseif(in_array($booking->status, ['Menunggu Verifikasi', 'Menunggu Pemeriksaan Staf Sarpras'], true))
                                 <span class="badge-status badge-pending">Verifikasi Staf</span>
-                            @elseif($booking->status === 'Menunggu Persetujuan Kepala Lab')
-                                <span class="badge-status badge-info">Persetujuan Kalab</span>
                             @elseif($booking->status === 'Perlu Revisi')
                                 <span class="badge-status badge-warning">Perlu Revisi</span>
                             @else

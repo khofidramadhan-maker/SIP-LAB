@@ -11,7 +11,13 @@
             <h5 class="fw-bold text-dark mb-1">Daftar Antrean Menunggu Verifikasi Sarpras</h5>
             <p class="text-muted small mb-0">Total {{ $bookings->count() }} pengajuan memerlukan tindak lanjut Anda</p>
         </div>
-        <div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ route('staff.handover.index') }}" class="btn btn-sm btn-brand-primary">
+                <i class="bi bi-box-arrow-up-right"></i> Serah Terima
+            </a>
+            <a href="{{ route('staff.returns.index') }}" class="btn btn-sm btn-brand-primary">
+                <i class="bi bi-box-arrow-in-down"></i> Pengembalian
+            </a>
             <a href="{{ route('staff.dashboard') }}" class="btn btn-sm btn-brand-outline">
                 <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
             </a>
@@ -59,7 +65,7 @@
                             <small class="text-muted">{{ substr($booking->jam_mulai, 0, 5) }} - {{ substr($booking->jam_selesai, 0, 5) }} WIB</small>
                         </td>
                         <td>
-                            @if($booking->status === 'Menunggu Pemeriksaan Staf Sarpras')
+                            @if(in_array($booking->status, ['Menunggu Pemeriksaan Staf Sarpras', 'Menunggu Verifikasi'], true))
                                 <span class="badge-status badge-pending">Menunggu Staf</span>
                             @elseif($booking->status === 'Perlu Revisi')
                                 <span class="badge-status badge-warning">Perlu Revisi</span>
@@ -82,22 +88,19 @@
                                     <i class="bi bi-eye"></i>
                                 </a>
 
-                                <!-- Approve Form -->
                                 <form method="POST" action="{{ route('staff.verify', $booking) }}" class="d-inline">
                                     @csrf
                                     <input type="hidden" name="status" value="approved">
-                                    <button type="submit" class="btn btn-sm btn-success px-3" onclick="return confirm('Loloskan verifikasi pengajuan ini ke tahap persetujuan Kepala Laboratorium?')">
+                                    <button type="submit" class="btn btn-sm btn-success px-3" onclick="return confirm('Setujui pengajuan peminjaman ini?')">
                                         <i class="bi bi-check-lg"></i> Setujui
                                     </button>
                                 </form>
 
-                                <!-- Button Trigger Modal Reject/Revisi -->
                                 <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#staffRevisiModal{{ $booking->id }}">
-                                    <i class="bi bi-pencil-square"></i> Revisi
+                                    <i class="bi bi-x-lg"></i> Tolak
                                 </button>
                             </div>
 
-                            <!-- Modal Catatan Revisi -->
                             <div class="modal fade text-start" id="staffRevisiModal{{ $booking->id }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content border-0 shadow" style="border-radius: 16px;">
@@ -105,16 +108,16 @@
                                             @csrf
                                             <input type="hidden" name="status" value="rejected">
                                             <div class="modal-header border-bottom">
-                                                <h6 class="modal-title fw-bold">Instruksi Revisi {{ $booking->kode_peminjaman }}</h6>
+                                                <h6 class="modal-title fw-bold">Tolak Pengajuan {{ $booking->kode_peminjaman }}</h6>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <p class="text-muted small mb-2">Jelaskan hal yang perlu diperbaiki oleh mahasiswa:</p>
-                                                <textarea name="notes" class="form-control" rows="4" placeholder="Tuliskan catatan perbaikan..." required></textarea>
+                                                <p class="text-muted small mb-2">Berikan alasan penolakan kepada mahasiswa:</p>
+                                                <textarea name="notes" class="form-control" rows="4" placeholder="Tuliskan alasan penolakan..." required></textarea>
                                             </div>
                                             <div class="modal-footer border-top">
                                                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" class="btn btn-danger">Kirimkan Revisi</button>
+                                                <button type="submit" class="btn btn-danger">Tolak Pengajuan</button>
                                             </div>
                                         </form>
                                     </div>

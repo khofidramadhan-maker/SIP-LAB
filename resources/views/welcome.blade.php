@@ -111,7 +111,7 @@
                 <div class="stat-card-top">
                     <div>
                         <div class="stat-card-label">Peminjaman Selesai</div>
-                        <div class="stat-card-value">{{ \App\Models\Peminjaman::where('status', 'Disetujui')->count() }}</div>
+                        <div class="stat-card-value">{{ \App\Models\Peminjaman::where('status', 'Selesai')->count() }}</div>
                     </div>
                     <div class="stat-card-icon stat-icon-purple">
                         <i class="bi bi-calendar2-check"></i>
@@ -160,7 +160,7 @@
                 </div>
                 <h5 class="fw-bold text-dark mb-2">Verifikasi 2 Tingkat</h5>
                 <p class="text-muted small mb-0" style="line-height: 1.6;">
-                    Alur peminjaman resmi melalui verifikasi berkas oleh Staf Sarpras Laboratorium dan persetujuan final bertanda tangan digital dari Kepala Laboratorium.
+                    Alur peminjaman resmi dengan pemeriksaan dan keputusan langsung oleh Staf Sarpras Laboratorium.
                 </p>
             </div>
         </div>

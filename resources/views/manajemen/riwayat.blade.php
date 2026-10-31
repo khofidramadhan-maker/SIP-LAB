@@ -18,7 +18,8 @@
 
     {{-- Filter --}}
     <form method="GET" action="{{ route('staff.riwayat') }}" class="mb-4">
-        <div class="d-flex gap-2 align-items-center">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-auto">
             <label class="form-label mb-0 fw-semibold small text-muted text-nowrap">Filter jenis data:</label>
             <select name="jenis_data" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
                 <option value="">Semua</option>
@@ -26,9 +27,21 @@
                 <option value="pengguna" {{ $jenisData === 'pengguna' ? 'selected' : '' }}>Pengguna</option>
                 <option value="alat" {{ $jenisData === 'alat' ? 'selected' : '' }}>Alat</option>
             </select>
-            @if($jenisData)
+            </div>
+            <div class="col-6 col-md-3">
+                <label for="date_from" class="form-label mb-1 fw-semibold small text-muted">Dari tanggal</label>
+                <input id="date_from" type="date" name="date_from" class="form-control form-control-sm"
+                       value="{{ $filters['date_from'] ?? '' }}">
+            </div>
+            <div class="col-6 col-md-3">
+                <label for="date_to" class="form-label mb-1 fw-semibold small text-muted">Sampai tanggal</label>
+                <input id="date_to" type="date" name="date_to" class="form-control form-control-sm"
+                       value="{{ $filters['date_to'] ?? '' }}">
+            </div>
+            <div class="col-12 col-md-auto d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-brand-primary">Terapkan</button>
                 <a href="{{ route('staff.riwayat') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-            @endif
+            </div>
         </div>
     </form>
 
@@ -113,4 +126,3 @@
     @endif
 </div>
 @endsection
-

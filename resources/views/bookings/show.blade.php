@@ -21,10 +21,12 @@
                 <div>
                     @if($booking->status === 'Disetujui')
                         <span class="badge-status badge-success fs-6 px-3 py-2">Disetujui</span>
-                    @elseif($booking->status === 'Menunggu Verifikasi')
-                        <span class="badge-status badge-pending fs-6 px-3 py-2">Menunggu Verifikasi Staf</span>
-                    @elseif($booking->status === 'Menunggu Persetujuan Kepala Lab')
-                        <span class="badge-status badge-info fs-6 px-3 py-2">Persetujuan Kepala Lab</span>
+                    @elseif(in_array($booking->status, ['Menunggu Verifikasi', 'Menunggu Pemeriksaan Staf Sarpras'], true))
+                        <span class="badge-status badge-pending fs-6 px-3 py-2">Menunggu Pemeriksaan Staf Sarpras</span>
+                    @elseif($booking->status === 'Sedang Dipinjam')
+                        <span class="badge-status badge-info fs-6 px-3 py-2">Sedang Dipinjam</span>
+                    @elseif($booking->status === 'Selesai')
+                        <span class="badge-status badge-success fs-6 px-3 py-2">Selesai</span>
                     @elseif($booking->status === 'Perlu Revisi')
                         <span class="badge-status badge-warning fs-6 px-3 py-2">Perlu Revisi</span>
                     @else
@@ -77,7 +79,10 @@
                                 @foreach($booking->detailAlat as $item)
                                     <li class="small d-flex justify-content-between mb-1">
                                         <span class="fw-semibold text-dark">{{ $item->alat?->nama_alat }}</span>
-                                        <span class="text-muted">{{ $item->jumlah }} unit (kondisi: {{ $item->kondisi_awal }})</span>
+                                        <span class="text-muted">
+                                            {{ $item->jumlah }} unit (kondisi awal: {{ $item->kondisi_awal }}
+                                            @if($item->kondisi_akhir) · akhir: {{ $item->kondisi_akhir }} @endif)
+                                        </span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -104,6 +109,45 @@
                 </div>
             </div>
 
+            @if($booking->serahTerima || $booking->pengembalian)
+                <div class="row g-3 mb-4">
+                    @if($booking->serahTerima)
+                        <div class="col-12">
+                            <div class="p-3 rounded-3 bg-light-subtle border">
+                                <h6 class="fw-bold mb-2">Informasi Serah Terima</h6>
+                                <div class="small text-muted">
+                                    Diserahkan oleh {{ $booking->serahTerima->petugas->nama ?? $booking->serahTerima->petugas->name ?? '-' }}
+                                    pada {{ \Carbon\Carbon::parse($booking->serahTerima->waktu_serah)->format('d/m/Y H:i') }}.
+                                    Penerima: {{ $booking->user->nama ?? $booking->user->name }}.
+                                </div>
+                                @if($booking->serahTerima->catatan)
+                                    <div class="small mt-1">{{ $booking->serahTerima->catatan }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($booking->pengembalian)
+                        <div class="col-12">
+                            <div class="p-3 rounded-3 bg-light-subtle border">
+                                <h6 class="fw-bold mb-2">Informasi Pengembalian</h6>
+                                <div class="small text-muted">
+                                    Diterima oleh {{ $booking->pengembalian->petugas->nama ?? $booking->pengembalian->petugas->name ?? '-' }}
+                                    pada {{ \Carbon\Carbon::parse($booking->pengembalian->waktu_kembali)->format('d/m/Y H:i') }}.
+                                    Terlambat {{ $booking->pengembalian->hari_terlambat }} hari.
+                                </div>
+                                @foreach($booking->pengembalian->kerusakanAlat as $damage)
+                                    <div class="small text-danger mt-2">
+                                        {{ $damage->detailAlat?->alat?->nama_alat ?? 'Alat' }}: {{ $damage->jenis_kondisi }}
+                                        @if($damage->deskripsi) — {{ $damage->deskripsi }} @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             <!-- Back & Print Buttons -->
             <div class="d-flex justify-content-between pt-3 border-top">
                 @if(Auth::user()->role === 'mahasiswa')
@@ -127,81 +171,39 @@
         </div>
     </div>
 
-    <!-- Stepper / Persetujuan Timeline Sidebar -->
     <div class="col-lg-4">
         <div class="card-custom p-4 mb-4">
             <h6 class="fw-bold text-dark mb-4 d-flex align-items-center gap-2">
-                <i class="bi bi-diagram-3-fill text-primary"></i> Riwayat Persetujuan (persetujuan)
+                <i class="bi bi-clipboard2-check-fill text-primary"></i> Keputusan Persetujuan
             </h6>
 
-            @php
-                $p1 = $booking->persetujuan->where('tingkat', '1')->first();
-                $p2 = $booking->persetujuan->where('tingkat', '2')->first();
-            @endphp
-
-            <div class="timeline position-relative ps-4" style="border-left: 2px solid #e2e8f0;">
-                <!-- Step 1: Diajukan -->
-                <div class="mb-4 position-relative">
-                    <span class="badge bg-success rounded-circle position-absolute" style="left: -25px; top: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-check text-white" style="font-size: 0.75rem;"></i>
+            @forelse($booking->persetujuan->sortBy('tanggal') as $approval)
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="fw-bold text-dark small">
+                        @if((string) $approval->tingkat === '2')
+                            Riwayat keputusan Kepala Lab (historis)
+                        @else
+                            Keputusan Staf Sarpras
+                        @endif
+                    </div>
+                    <span class="badge {{ $approval->keputusan === 'disetujui' ? 'bg-success' : 'bg-danger' }}">
+                        {{ ucfirst($approval->keputusan) }}
                     </span>
-                    <div class="fw-bold text-dark small">Pengajuan Terkirim</div>
-                    <small class="text-muted d-block">{{ $booking->created_at->format('d M Y, H:i') }} WIB</small>
-                    <small class="text-success">Data tersimpan di sistem SIP-LAB</small>
-                </div>
-
-                <!-- Step 2: Persetujuan Tingkat 1 (Staf) -->
-                <div class="mb-4 position-relative">
-                    @if($p1 && $p1->keputusan === 'disetujui')
-                        <span class="badge bg-success rounded-circle position-absolute" style="left: -25px; top: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-check text-white" style="font-size: 0.75rem;"></i>
-                        </span>
-                        <div class="fw-bold text-dark small">Verifikasi Tingkat I (Staf)</div>
-                        <small class="text-success d-block">Disetujui: {{ $p1->catatan ?? 'Lolos verifikasi' }}</small>
-                        <small class="text-muted">{{ date('d M Y, H:i', strtotime($p1->tanggal)) }}</small>
-                    @elseif($booking->status === 'Menunggu Verifikasi')
-                        <span class="badge bg-warning rounded-circle position-absolute" style="left: -25px; top: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-clock text-dark" style="font-size: 0.65rem;"></i>
-                        </span>
-                        <div class="fw-bold text-dark small">Verifikasi Tingkat I (Staf)</div>
-                        <small class="text-warning">Dalam antrean verifikasi staf</small>
-                    @else
-                        <span class="badge bg-secondary rounded-circle position-absolute" style="left: -25px; top: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-dot text-white"></i>
-                        </span>
-                        <div class="fw-bold text-muted small">Verifikasi Tingkat I (Staf)</div>
-                        @if($p1)
-                            <small class="text-danger d-block">Catatan: {{ $p1->catatan }}</small>
-                        @endif
+                    @if($approval->catatan)
+                        <small class="text-muted d-block mt-1">{{ $approval->catatan }}</small>
                     @endif
+                    <small class="text-muted d-block">{{ date('d M Y, H:i', strtotime($approval->tanggal)) }}</small>
+                    <small class="text-muted d-block">
+                        Oleh {{ $approval->user?->nama ?? $approval->user?->name ?? 'Pengguna' }}
+                    </small>
                 </div>
-
-                <!-- Step 3: Persetujuan Tingkat 2 (Kepala Lab) -->
-                <div class="position-relative">
-                    @if($p2 && $p2->keputusan === 'disetujui')
-                        <span class="badge bg-success rounded-circle position-absolute" style="left: -25px; top: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-check text-white" style="font-size: 0.75rem;"></i>
-                        </span>
-                        <div class="fw-bold text-dark small">Persetujuan Tingkat II (Kepala Lab)</div>
-                        <small class="text-success d-block">Disahkan resmi: {{ $p2->catatan ?? 'Izin diterbitkan' }}</small>
-                        <small class="text-muted">{{ date('d M Y, H:i', strtotime($p2->tanggal)) }}</small>
-                    @elseif($booking->status === 'Menunggu Persetujuan Kepala Lab')
-                        <span class="badge bg-info rounded-circle position-absolute" style="left: -25px; top: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-hourglass-split text-white" style="font-size: 0.65rem;"></i>
-                        </span>
-                        <div class="fw-bold text-dark small">Persetujuan Tingkat II (Kepala Lab)</div>
-                        <small class="text-info">Menunggu keputusan pimpinan</small>
-                    @else
-                        <span class="badge bg-secondary rounded-circle position-absolute" style="left: -25px; top: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
-                            <i class="bi bi-dot text-white"></i>
-                        </span>
-                        <div class="fw-bold text-muted small">Persetujuan Tingkat II (Kepala Lab)</div>
-                        @if($p2)
-                            <small class="text-danger d-block">Catatan: {{ $p2->catatan }}</small>
-                        @endif
-                    @endif
-                </div>
-            </div>
+            @empty
+                @if(in_array($booking->status, ['Menunggu Verifikasi', 'Menunggu Pemeriksaan Staf Sarpras'], true))
+                    <p class="text-warning mb-0">Menunggu keputusan Staf Sarpras.</p>
+                @else
+                    <p class="text-muted mb-0">Belum ada riwayat keputusan persetujuan.</p>
+                @endif
+            @endforelse
         </div>
     </div>
 </div>

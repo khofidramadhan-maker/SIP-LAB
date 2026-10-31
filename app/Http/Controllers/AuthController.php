@@ -11,7 +11,22 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        return view('auth.login');
+        return response()
+            ->view('auth.login')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
+    }
+
+    public function home(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return redirect()->route('home');
+        }
+
+        return redirect()->to($this->redirectToRole($user->role));
     }
 
     public function login(Request $request)
@@ -23,8 +38,9 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+            $request->session()->forget('url.intended');
 
-            return redirect()->intended($this->redirectToRole(Auth::user()->role));
+            return redirect()->to($this->redirectToRole(Auth::user()->role));
         }
 
         return back()->withErrors(['email' => 'Email atau password tidak valid.'])->withInput();
@@ -66,7 +82,13 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect()
+            ->route('login')
+            ->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ]);
     }
 
     protected function redirectToRole(string $role): string
