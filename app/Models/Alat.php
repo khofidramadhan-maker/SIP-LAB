@@ -24,4 +24,30 @@ class Alat extends Model
     {
         return $this->hasMany(DetailAlat::class, 'alat_id');
     }
+
+    /** Satu unit fisik per baris, mis. AST-004-01 s.d. AST-004-15. */
+    public function units()
+    {
+        return $this->hasMany(UnitAlat::class, 'alat_id')->orderBy('kode_unit');
+    }
+
+    public function availableUnits()
+    {
+        return $this->units()->where('status', UnitAlat::STATUS_TERSEDIA);
+    }
+
+    /**
+     * Alias yang dipakai dosen/pengguna: kode barang dan kode alat
+     * sama-sama merujuk ke kode inventaris yang sudah ada di DB.
+     * Tidak ada kolom baru, jadi tidak perlu migrasi.
+     */
+    public function getKodeBarangAttribute(): ?string
+    {
+        return $this->kode_inventaris;
+    }
+
+    public function getKodeAlatAttribute(): ?string
+    {
+        return $this->kode_inventaris;
+    }
 }

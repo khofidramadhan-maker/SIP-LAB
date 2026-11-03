@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Alat;
 use App\Models\LogAktivitas;
 use App\Models\Ruangan;
+use App\Models\UnitAlat;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -207,7 +208,9 @@ class ManajemenController extends Controller
 
     public function alatIndex()
     {
-        $alat = Alat::orderBy('kode_inventaris')->paginate(15);
+        $alat = Alat::withCount(['units as rusak_count' => function ($query) {
+            $query->where('status', UnitAlat::STATUS_RUSAK);
+        }])->orderBy('kode_inventaris')->paginate(15);
         return view('manajemen.alat.index', compact('alat'));
     }
 
@@ -228,6 +231,9 @@ class ManajemenController extends Controller
         ]);
 
         $alat = Alat::create($data);
+
+        // Tiap unit fisik langsung dapat kode barang sendiri.
+        UnitAlat::ensureForAlat($alat);
 
         $this->log(
             "Tambah alat {$alat->kode_inventaris} – {$alat->nama_alat}",
@@ -265,7 +271,28 @@ class ManajemenController extends Controller
         ]);
 
         $sebelum = $alat->only(['kode_inventaris', 'nama_alat', 'kategori', 'jumlah_total', 'kondisi', 'status']);
+        $kodeLama = $alat->kode_inventaris;
         $alat->update($data);
+
+        // Kalau kode jenis berubah, kode unit ikut berubah prefix-nya
+        // (nomor unit dipertahankan), supaya kode barang tetap konsisten.
+        if ($kodeLama !== $alat->kode_inventaris) {
+            foreach ($alat->units()->get() as $unit) {
+                if (str_starts_with($unit->kode_unit, $kodeLama . '-')) {
+                    $unit->update(['kode_unit' => $alat->kode_inventaris . substr($unit->kode_unit, strlen($kodeLama))]);
+                }
+            }
+        }
+
+        UnitAlat::ensureForAlat($alat);
+
+        // Kalau jumlah_total dikurangi, hapus kelebihan unit yang masih
+        // tersedia saja — unit yang sedang dipinjam / rusak tidak dihapus.
+        $kelebihan = $alat->units()->count() - (int) $alat->jumlah_total;
+        if ($kelebihan > 0) {
+            $alat->units()->where('status', UnitAlat::STATUS_TERSEDIA)
+                ->orderByDesc('kode_unit')->limit($kelebihan)->delete();
+        }
 
         $this->log(
             "Ubah alat {$alat->kode_inventaris} – {$alat->nama_alat}",

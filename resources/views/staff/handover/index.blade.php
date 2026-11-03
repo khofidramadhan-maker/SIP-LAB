@@ -23,6 +23,7 @@
                     <th>Kode & Pemohon</th>
                     <th>Ruang dan Alat</th>
                     <th>Jadwal</th>
+                    <th>Dokumen</th>
                     <th class="text-end">Aksi</th>
                 </tr>
             </thead>
@@ -39,10 +40,20 @@
                             <small class="text-muted">
                                 {{ $booking->detailAlat->pluck('alat.nama_alat')->filter()->join(', ') ?: 'Tanpa alat tambahan' }}
                             </small>
+                            <small class="text-muted d-block">Kode Alat: {{ $booking->detailAlat->pluck('alat.kode_inventaris')->filter()->join(', ') ?: '-' }}</small>
                         </td>
                         <td>
                             {{ \Carbon\Carbon::parse($booking->tanggal_pinjam)->format('d/m/Y') }}<br>
                             <small class="text-muted">{{ substr($booking->jam_mulai, 0, 5) }}–{{ substr($booking->jam_selesai, 0, 5) }}</small>
+                        </td>
+                        <td>
+                            @if($booking->dokumen_pendukung)
+                                <a href="{{ route('booking.document', $booking) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="font-size:0.75rem;">
+                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                </a>
+                            @else
+                                <span class="text-muted small">Tidak ada</span>
+                            @endif
                         </td>
                         <td class="text-end">
                             <a href="{{ route('staff.handover.create', $booking) }}" class="btn btn-sm btn-brand-primary">
@@ -52,7 +63,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center py-5 text-muted">Tidak ada peminjaman yang menunggu serah terima.</td>
+                        <td colspan="5" class="text-center py-5 text-muted">Tidak ada peminjaman yang menunggu serah terima.</td>
                     </tr>
                 @endforelse
             </tbody>

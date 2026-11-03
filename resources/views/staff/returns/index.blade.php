@@ -39,6 +39,11 @@
                             <div>{{ $room?->nama_ruangan ?? 'Ruang tidak terdata' }}</div>
                             <small class="text-muted">
                                 {{ $booking->detailAlat->pluck('alat.nama_alat')->filter()->join(', ') ?: 'Tanpa alat tambahan' }}
+                                <small class="text-muted d-block">Kode Alat: {{ $booking->detailAlat->pluck('alat.kode_inventaris')->filter()->join(', ') ?: '-' }}</small>
+                                @php($unitCodes = $booking->detailAlat->flatMap(fn ($d) => $d->detailAlatUnits->map(fn ($r) => $r->unitAlat?->kode_unit))->filter())
+                                @if($unitCodes->isNotEmpty())
+                                    <small class="text-muted d-block">Kode Barang: {{ $unitCodes->join(', ') }}</small>
+                                @endif
                             </small>
                         </td>
                         <td>

@@ -13,6 +13,7 @@ use App\Services\BookingAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class BookingController extends Controller
@@ -142,13 +143,52 @@ class BookingController extends Controller
             'user',
             'detailRuangan.ruangan',
             'detailAlat.alat',
+            'detailAlat.detailAlatUnits.unitAlat',
             'persetujuan.user',
             'serahTerima.petugas',
             'pengembalian.petugas',
+            'pengembalian.kerusakanAlat.unitAlat',
             'pengembalian.kerusakanAlat.detailAlat.alat',
             'pengembalian.sanksi',
         ]);
 
         return view('bookings.show', compact('booking'));
+    }
+
+    /**
+     * Buka dokumen pendukung lewat controller, bukan lewat
+     * asset('storage/...') langsung.
+     *
+     * Alasan: link lama hanya jalan kalau symlink public/storage
+     * (php artisan storage:link) sudah dibuat di server. Kalau belum,
+     * staf sarpras dapat 404 padahal file-nya ada. Lewat route ini
+     * file dibaca dari disk public apa pun kondisi symlink-nya,
+     * dan aksesnya tetap dijaga: mahasiswa hanya boleh buka
+     * peminjamannya sendiri, staf dan kepala lab boleh buka semua.
+     */
+    public function document(Peminjaman $booking)
+    {
+        $user = Auth::user();
+
+        if ($user->role === 'mahasiswa' && $booking->user_id !== $user->id) {
+            abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
+        }
+
+        if (!in_array($user->role, ['mahasiswa', 'staff', 'kepala_lab'], true)) {
+            abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
+        }
+
+        if (!$booking->dokumen_pendukung
+            || !Storage::disk('public')->exists($booking->dokumen_pendukung)) {
+            abort(404, 'Dokumen pendukung tidak ditemukan. File mungkin belum terunggah atau sudah dihapus dari penyimpanan.');
+        }
+
+        return response()->file(
+            Storage::disk('public')->path($booking->dokumen_pendukung),
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . basename($booking->dokumen_pendukung) . '"',
+            ]
+        );
     }
 }

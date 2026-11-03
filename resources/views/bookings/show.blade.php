@@ -164,12 +164,20 @@
                         @if($booking->detailAlat->count() > 0)
                             <ul class="list-unstyled mb-0 mt-2">
                                 @foreach($booking->detailAlat as $item)
-                                    <li class="small d-flex justify-content-between mb-1">
-                                        <span class="fw-semibold text-dark">{{ $item->alat?->nama_alat }}</span>
-                                        <span class="text-muted">
-                                            {{ $item->jumlah }} unit (kondisi awal: {{ $item->kondisi_awal }}
-                                            @if($item->kondisi_akhir) · akhir: {{ $item->kondisi_akhir }} @endif)
-                                        </span>
+                                    <li class="small mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="fw-semibold text-dark">{{ $item->alat?->nama_alat }} <small class="text-muted">(Kode Alat: {{ $item->alat?->kode_alat ?? "-" }})</small></span>
+                                            <span class="text-muted">{{ $item->jumlah }} unit</span>
+                                        </div>
+                                        @if($item->detailAlatUnits->isNotEmpty())
+                                            <div class="text-muted mt-1">
+                                                @foreach($item->detailAlatUnits as $row)
+                                                    <div>{{ $row->unitAlat?->kode_unit ?? '-' }} — awal: {{ $row->kondisi_awal ?? '-' }}@if($row->kondisi_akhir) · akhir: {{ $row->kondisi_akhir }}@endif</div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div class="text-muted">Kondisi awal: {{ $item->kondisi_awal }}@if($item->kondisi_akhir) · akhir: {{ $item->kondisi_akhir }}@endif</div>
+                                        @endif
                                     </li>
                                 @endforeach
                             </ul>
@@ -185,7 +193,7 @@
                         <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Dokumen Pendukung</small>
                         @if($booking->dokumen_pendukung)
                             <div class="mt-2">
-                                <a href="{{ asset('storage/' . $booking->dokumen_pendukung) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 booking-document-link">
+                                <a href="{{ route('booking.document', $booking) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 booking-document-link">
                                     <i class="bi bi-file-earmark-pdf"></i> Lihat Dokumen Pendukung
                                 </a>
                                 <div class="booking-document-print small text-dark mt-2">
@@ -229,7 +237,7 @@
                                 </div>
                                 @foreach($booking->pengembalian->kerusakanAlat as $damage)
                                     <div class="small text-danger mt-2">
-                                        {{ $damage->detailAlat?->alat?->nama_alat ?? 'Alat' }}: {{ $damage->jenis_kondisi }}
+                                        @if($damage->unitAlat){{ $damage->unitAlat->kode_unit }} ({{ $damage->detailAlat?->alat?->nama_alat ?? 'Alat' }})@else{{ $damage->detailAlat?->alat?->nama_alat ?? 'Alat' }}@endif: {{ $damage->jenis_kondisi }}
                                         @if($damage->deskripsi) — {{ $damage->deskripsi }} @endif
                                     </div>
                                 @endforeach

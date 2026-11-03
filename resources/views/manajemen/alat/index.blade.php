@@ -55,6 +55,9 @@
                         <td>
                             <span class="fw-semibold text-dark">{{ $a->jumlah_total }}</span>
                             <span class="text-muted small"> unit</span>
+                            @if(($a->rusak_count ?? 0) > 0)
+                                <div class="text-danger small">{{ $a->rusak_count }} unit rusak (sudah dikeluarkan dari jumlah)</div>
+                            @endif
                         </td>
                         <td>
                             @if($a->kondisi === 'baik')

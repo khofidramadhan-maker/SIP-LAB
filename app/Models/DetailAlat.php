@@ -33,4 +33,18 @@ class DetailAlat extends Model
     {
         return $this->hasMany(KerusakanAlat::class, 'detail_alat_id');
     }
+
+    /** Unit fisik persis yang diserahkan pada baris peminjaman ini. */
+    public function detailAlatUnits()
+    {
+        return $this->hasMany(DetailAlatUnit::class, 'detail_alat_id');
+    }
+
+    public function units()
+    {
+        return $this->belongsToMany(UnitAlat::class, 'detail_alat_unit', 'detail_alat_id', 'unit_alat_id')
+            ->withPivot(['kondisi_awal', 'kondisi_akhir'])
+            ->withTimestamps()
+            ->orderBy('kode_unit');
+    }
 }

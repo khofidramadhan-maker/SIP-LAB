@@ -142,7 +142,7 @@
                         </td>
                         <td>
                             @if($booking->dokumen_pendukung)
-                                <a href="{{ asset('storage/' . $booking->dokumen_pendukung) }}" target="_blank" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none px-2 py-1 rounded-pill">
+                                <a href="{{ route('booking.document', $booking) }}" target="_blank" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none px-2 py-1 rounded-pill">
                                     <i class="bi bi-file-pdf"></i> Lihat PDF
                                 </a>
                             @else

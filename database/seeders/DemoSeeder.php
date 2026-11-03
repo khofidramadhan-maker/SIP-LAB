@@ -14,6 +14,7 @@ use App\Models\Persetujuan;
 use App\Models\Ruangan;
 use App\Models\Sanksi;
 use App\Models\SerahTerima;
+use App\Models\UnitAlat;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -149,6 +150,12 @@ class DemoSeeder extends Seeder
                 'status' => 'tersedia',
             ]
         );
+
+        // Tiap jenis alat langsung dapat kode barang per unit fisik,
+        // mis. AST-004-01 s.d. AST-004-15 untuk Kit Sensor IoT ESP32.
+        foreach ([$alat1, $alat2, $alat3, $alat4, $alat5] as $alat) {
+            UnitAlat::ensureForAlat($alat);
+        }
 
         // 4. Sample Peminjaman 1: Selesai
         $pinjam1 = Peminjaman::firstOrCreate(

@@ -42,6 +42,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/mahasiswa/kalender-data', [DashboardController::class, 'calendarData'])->name('student.calendar.data');
     });
     Route::get('/mahasiswa/peminjaman/{booking}', [BookingController::class, 'show'])->name('booking.show');
+    // Dokumen pendukung lewat controller (lihat BookingController::document):
+    // tetap bisa dibuka staf sarpras meski symlink public/storage belum dibuat.
+    Route::get('/peminjaman/{booking}/dokumen', [BookingController::class, 'document'])->name('booking.document');
 
     // Role: Staf Sarpras
     Route::middleware('role:staff')->group(function () {

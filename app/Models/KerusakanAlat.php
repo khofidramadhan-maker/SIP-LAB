@@ -14,9 +14,15 @@ class KerusakanAlat extends Model
     protected $fillable = [
         'pengembalian_id',
         'detail_alat_id',
+        'unit_alat_id',
         'jenis_kondisi',
         'deskripsi',
     ];
+
+    public function unitAlat()
+    {
+        return $this->belongsTo(UnitAlat::class, 'unit_alat_id');
+    }
 
     public function pengembalian()
     {

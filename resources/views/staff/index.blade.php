@@ -56,6 +56,7 @@
                             @if($booking->detailAlat->count() > 0)
                                 <div class="small text-dark fw-semibold">{{ $booking->detailAlat->count() }} jenis alat</div>
                                 <small class="text-muted">{{ $booking->detailAlat->pluck('alat.nama_alat')->filter()->join(', ') }}</small>
+                                <small class="text-muted d-block">Kode Alat: {{ $booking->detailAlat->pluck('alat.kode_inventaris')->filter()->join(', ') ?: '-' }}</small>
                             @else
                                 <span class="text-muted small">Ruangan Saja</span>
                             @endif
@@ -75,7 +76,7 @@
                         </td>
                         <td>
                             @if($booking->dokumen_pendukung)
-                                <a href="{{ asset('storage/' . $booking->dokumen_pendukung) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="font-size:0.75rem;">
+                                <a href="{{ route('booking.document', $booking) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="font-size:0.75rem;">
                                     <i class="bi bi-file-earmark-pdf"></i> PDF
                                 </a>
                             @else

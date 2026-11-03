@@ -58,6 +58,30 @@
                 <dt class="col-5 text-muted fw-semibold py-2">Dibuat</dt>
                 <dd class="col-7 py-2 text-dark">{{ $alat->created_at->format('d/m/Y H:i') }}</dd>
             </dl>
+
+            <h6 class="fw-bold text-dark mt-4 mb-2">Daftar Kode Barang (per unit)</h6>
+            @forelse($alat->units as $unit)
+                <div class="py-2 border-bottom">
+                    <div class="d-flex justify-content-between small">
+                        <span class="fw-semibold">{{ $unit->kode_unit }}</span>
+                        <span class="text-muted">{{ ucfirst($unit->status) }}</span>
+                    </div>
+                    @if($unit->status === 'rusak')
+                        @php($kerusakanTerakhir = $unit->kerusakanAlat->sortByDesc('created_at')->first())
+                        @if($kerusakanTerakhir)
+                            <div class="text-danger small mt-1">
+                                Rusak: {{ $kerusakanTerakhir->jenis_kondisi }}
+                                @if($kerusakanTerakhir->deskripsi) — {{ $kerusakanTerakhir->deskripsi }} @endif
+                                @if($kerusakanTerakhir->pengembalian?->peminjaman)
+                                    <span class="text-muted">({{ $kerusakanTerakhir->pengembalian->peminjaman->kode_peminjaman }})</span>
+                                @endif
+                            </div>
+                        @endif
+                    @endif
+                </div>
+            @empty
+                <p class="text-muted small">Belum ada unit. Jalankan migrasi unit, atau simpan ulang alat ini.</p>
+            @endforelse
         </div>
     </div>
 
