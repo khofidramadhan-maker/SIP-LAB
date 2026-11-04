@@ -1,221 +1,804 @@
+
 @extends('layouts.app')
 
-@section('title', 'SIP-LAB - Sistem Informasi Peminjaman Laboratorium')
+@section('title', 'SIP-LAB - Sistem Informasi Laboratorium')
 
 @section('content')
-<div class="container-fluid px-lg-5 py-4">
-    <!-- Hero Section -->
-    <div class="hero-banner mb-5 p-5 position-relative overflow-hidden" style="border-radius: 24px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e3a8a 100%);">
-        <div class="row align-items-center position-relative" style="z-index: 2;">
-            <div class="col-lg-7 py-3">
-                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-3 rounded-pill" style="background: rgba(37, 99, 235, 0.25); border: 1px solid rgba(96, 165, 250, 0.3); color: #93c5fd; font-size: 0.82rem; font-weight: 600;">
-                    <i class="bi bi-shield-check"></i>
-                    <span>Sistem Terintegrasi Laboratorium Riset & Akademik</span>
-                </div>
-                <h1 class="display-4 fw-bold text-white mb-3" style="letter-spacing: -0.03em; line-height: 1.15;">
-                    Peminjaman Laboratorium & Inventaris Alat Riset
-                </h1>
-                <p class="lead text-white-50 mb-4" style="max-width: 580px; font-size: 1.05rem; line-height: 1.6;">
-                    Portal terpadu untuk mahasiswa, staf sarpras, dan kepala laboratorium dalam mengelola jadwal penggunaan ruang laboratorium, peminjaman peralatan ilmiah, verifikasi dokumen, serta persetujuan resmi secara real-time.
-                </p>
-                
-                <div class="d-flex flex-wrap gap-3">
-                    @auth
-                        @if(Auth::user()->role === 'mahasiswa')
-                            <a href="{{ route('student.dashboard') }}" class="btn btn-primary px-4 py-3 fw-bold rounded-3 shadow-sm d-inline-flex align-items-center gap-2" style="background:#2563eb; border:none;">
-                                <i class="bi bi-grid-fill"></i> Buka Dashboard Mahasiswa
-                            </a>
-                        @elseif(Auth::user()->role === 'staff')
-                            <a href="{{ route('staff.dashboard') }}" class="btn btn-primary px-4 py-3 fw-bold rounded-3 shadow-sm d-inline-flex align-items-center gap-2" style="background:#2563eb; border:none;">
-                                <i class="bi bi-speedometer2"></i> Dashboard Verifikasi Staf
-                            </a>
+
+<style>
+    /* =========================================
+       RESET & FULLSCREEN
+    ========================================= */
+
+    html,
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100%;
+        min-height: 100%;
+    }
+
+    body {
+        overflow-x: hidden;
+        background: #111c34;
+    }
+
+    .sip-landing,
+    .sip-landing * {
+        box-sizing: border-box;
+    }
+
+    .sip-landing {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background: #111c34;
+        font-family: inherit;
+    }
+
+    /* =========================================
+       HERO SECTION
+    ========================================= */
+
+    .sip-hero {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 100%;
+        min-height: 100%;
+        padding: clamp(28px, 6vw, 90px);
+
+        overflow: hidden;
+
+        background: linear-gradient(
+            115deg,
+            #111c34 0%,
+            #1b3155 55%,
+            #244b91 100%
+        );
+    }
+
+    /* Background Decoration */
+
+    .sip-hero::before {
+        content: "";
+        position: absolute;
+        width: 420px;
+        height: 420px;
+        top: -260px;
+        right: -80px;
+
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 50%;
+
+        box-shadow:
+            0 0 0 40px rgba(255,255,255,.025),
+            0 0 0 80px rgba(255,255,255,.02);
+
+        pointer-events: none;
+    }
+
+    .sip-hero::after {
+        content: "";
+        position: absolute;
+        width: 350px;
+        height: 350px;
+        bottom: -260px;
+        left: 35%;
+
+        border: 1px solid rgba(255,255,255,.04);
+        border-radius: 50%;
+
+        pointer-events: none;
+    }
+
+    .sip-content {
+        position: relative;
+        z-index: 2;
+
+        width: 100%;
+        max-width: 1500px;
+        margin: 0 auto;
+    }
+
+    /* =========================================
+       MAIN GRID
+    ========================================= */
+
+    .sip-grid {
+        display: grid;
+
+        grid-template-columns:
+            minmax(0, 1.7fr)
+            minmax(300px, .9fr);
+
+        align-items: center;
+
+        gap: clamp(35px, 7vw, 110px);
+    }
+
+    /* =========================================
+       LEFT CONTENT
+    ========================================= */
+
+    .sip-main-content {
+        min-width: 0;
+    }
+
+    .sip-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+
+        padding: 9px 14px;
+        margin-bottom: 24px;
+
+        border: 1px solid rgba(96,165,250,.28);
+        border-radius: 50px;
+
+        background: rgba(37,99,235,.16);
+
+        color: #bfdbfe;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .sip-eyebrow i {
+        font-size: 15px;
+    }
+
+    .sip-title {
+        max-width: 850px;
+
+        margin: 0 0 20px;
+
+        color: #ffffff;
+
+        font-size: clamp(34px, 4.2vw, 60px);
+        font-weight: 750;
+
+        letter-spacing: -2.5px;
+        line-height: 1.12;
+
+        overflow-wrap: break-word;
+    }
+
+    .sip-description {
+        max-width: 680px;
+
+        margin: 0 0 30px;
+
+        color: #cbd5e1;
+
+        font-size: clamp(14px, 1.2vw, 17px);
+        line-height: 1.75;
+    }
+
+    /* =========================================
+       BUTTONS
+    ========================================= */
+
+    .sip-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .sip-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        min-height: 54px;
+        padding: 0 25px;
+
+        border: 1px solid transparent;
+        border-radius: 10px;
+
+        font-size: 15px;
+        font-weight: 650;
+
+        text-decoration: none;
+
+        transition:
+            background .2s ease,
+            border-color .2s ease,
+            transform .2s ease,
+            box-shadow .2s ease;
+    }
+
+    .sip-btn-primary {
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .sip-btn-primary:hover {
+        background: #1d4ed8;
+        color: #ffffff;
+
+        transform: translateY(-2px);
+
+        box-shadow: 0 8px 20px rgba(37,99,235,.25);
+    }
+
+    .sip-btn-outline {
+        border-color: rgba(255,255,255,.45);
+
+        background: transparent;
+        color: #ffffff;
+    }
+
+    .sip-btn-outline:hover {
+        border-color: #ffffff;
+
+        background: rgba(255,255,255,.1);
+        color: #ffffff;
+
+        transform: translateY(-2px);
+    }
+
+    .sip-btn:focus-visible {
+        outline: 3px solid #93c5fd;
+        outline-offset: 3px;
+    }
+
+    /* =========================================
+       RIGHT INFORMATION PANEL
+    ========================================= */
+
+    .sip-panel-wrapper {
+        display: flex;
+        justify-content: center;
+        min-width: 0;
+    }
+
+    .sip-panel {
+        width: 100%;
+        max-width: 390px;
+
+        padding: 25px;
+
+        border: 1px solid rgba(255,255,255,.12);
+        border-radius: 21px;
+
+        background: rgba(255,255,255,.075);
+
+        box-shadow: 0 20px 45px rgba(0,0,0,.15);
+
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+    }
+
+    .sip-panel-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 58px;
+        height: 58px;
+
+        margin: 0 auto 16px;
+
+        border-radius: 17px;
+
+        background: linear-gradient(
+            135deg,
+            #2563eb,
+            #38bdf8
+        );
+
+        color: #ffffff;
+        font-size: 28px;
+
+        box-shadow: 0 8px 20px rgba(37,99,235,.25);
+    }
+
+    .sip-panel-title {
+        margin: 0 0 5px;
+
+        color: #ffffff;
+        text-align: center;
+
+        font-size: 21px;
+        font-weight: 750;
+    }
+
+    .sip-panel-description {
+        margin: 0 0 24px;
+
+        color: #aebed6;
+        text-align: center;
+
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    /* =========================================
+       INFORMATION ROWS
+    ========================================= */
+
+    .sip-info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+    }
+
+    .sip-info-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 10px;
+        min-height: 47px;
+
+        padding: 10px 13px;
+
+        border: 1px solid rgba(255,255,255,.08);
+        border-radius: 10px;
+
+        background: rgba(255,255,255,.055);
+    }
+
+    .sip-info-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        min-width: 0;
+
+        color: #d5dfef;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .sip-info-label i {
+        flex-shrink: 0;
+        color: #bfdbfe;
+        font-size: 15px;
+    }
+
+    .sip-info-value {
+        flex-shrink: 0;
+
+        padding: 5px 9px;
+
+        border-radius: 20px;
+
+        background: rgba(191,219,254,.17);
+
+        color: #dbeafe;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    /* =========================================
+       LARGE DESKTOP
+    ========================================= */
+
+    @media (min-width: 1600px) {
+        .sip-content {
+            max-width: 1600px;
+        }
+
+        .sip-title {
+            font-size: clamp(60px, 4vw, 72px);
+        }
+    }
+
+    /* =========================================
+       LAPTOP
+    ========================================= */
+
+    @media (max-width: 1200px) {
+        .sip-hero {
+            padding: 45px;
+        }
+
+        .sip-grid {
+            grid-template-columns:
+                minmax(0, 1.4fr)
+                minmax(280px, .8fr);
+
+            gap: 45px;
+        }
+
+        .sip-title {
+            font-size: clamp(36px, 4.5vw, 52px);
+        }
+    }
+
+    /* =========================================
+       TABLET
+    ========================================= */
+
+    @media (max-width: 991px) {
+        .sip-hero {
+            padding: 55px 35px;
+        }
+
+        .sip-grid {
+            grid-template-columns: 1fr;
+            gap: 35px;
+        }
+
+        .sip-main-content {
+            max-width: 750px;
+        }
+
+        .sip-title {
+            max-width: 750px;
+            font-size: clamp(38px, 6vw, 52px);
+        }
+
+        .sip-description {
+            max-width: 650px;
+        }
+
+        .sip-panel-wrapper {
+            justify-content: flex-start;
+        }
+
+        .sip-panel {
+            max-width: 480px;
+        }
+    }
+
+    /* =========================================
+       MOBILE
+    ========================================= */
+
+    @media (max-width: 767px) {
+        .sip-hero {
+            min-height: 100%;
+            padding: 40px 22px;
+        }
+
+        .sip-grid {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .sip-eyebrow {
+            padding: 8px 12px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .sip-title {
+            font-size: clamp(32px, 9vw, 43px);
+            letter-spacing: -1.5px;
+            line-height: 1.15;
+        }
+
+        .sip-description {
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .sip-actions {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sip-btn {
+            width: 100%;
+            min-height: 50px;
+            padding: 0 18px;
+            font-size: 14px;
+        }
+
+        .sip-panel-wrapper {
+            justify-content: flex-start;
+        }
+
+        .sip-panel {
+            max-width: 100%;
+            padding: 20px;
+        }
+
+        .sip-panel-icon {
+            width: 52px;
+            height: 52px;
+            font-size: 24px;
+        }
+
+        .sip-panel-title {
+            font-size: 19px;
+        }
+
+        .sip-panel-description {
+            font-size: 13px;
+        }
+    }
+
+    /* =========================================
+       SMALL MOBILE
+    ========================================= */
+
+    @media (max-width: 380px) {
+        .sip-hero {
+            padding: 32px 17px;
+        }
+
+        .sip-title {
+            font-size: 32px;
+            letter-spacing: -1.2px;
+        }
+
+        .sip-info-item {
+            padding: 9px 10px;
+        }
+
+        .sip-info-label {
+            font-size: 12px;
+            gap: 7px;
+        }
+
+        .sip-info-value {
+            font-size: 10px;
+        }
+    }
+
+    /* =========================================
+       SHORT SCREEN
+    ========================================= */
+
+    @media (min-width: 768px) and (max-height: 650px) {
+        .sip-hero {
+            padding-top: 30px;
+            padding-bottom: 30px;
+        }
+
+        .sip-eyebrow {
+            margin-bottom: 15px;
+        }
+
+        .sip-title {
+            font-size: clamp(32px, 4vw, 46px);
+            margin-bottom: 12px;
+        }
+
+        .sip-description {
+            margin-bottom: 20px;
+        }
+
+        .sip-panel {
+            padding: 18px;
+        }
+
+        .sip-panel-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 10px;
+        }
+
+        .sip-panel-description {
+            margin-bottom: 15px;
+        }
+
+        .sip-info-item {
+            min-height: 40px;
+        }
+    }
+
+    /* Reduce Motion Accessibility */
+
+    @media (prefers-reduced-motion: reduce) {
+        .sip-btn {
+            transition: none;
+        }
+    }
+</style>
+
+@php
+    $roomCount = \App\Models\Ruangan::count();
+
+    $assetCount = \App\Models\Alat::count();
+
+    $completedLoans = \App\Models\Peminjaman::where(
+        'status',
+        'Selesai'
+    )->count();
+@endphp
+
+<main class="sip-landing">
+
+    <section class="sip-hero">
+
+        <div class="sip-content">
+
+            <div class="sip-grid">
+
+                {{-- LEFT CONTENT --}}
+
+                <div class="sip-main-content">
+
+                    <div class="sip-eyebrow">
+                        <i class="bi bi-shield-check"></i>
+
+                        <span>
+                            Sistem Informasi Laboratorium
+                        </span>
+                    </div>
+
+                    <h1 class="sip-title">
+                        Peminjaman Laboratorium & Inventaris Alat Riset
+                    </h1>
+
+                    <p class="sip-description">
+                        Portal terpadu untuk mahasiswa dan pengelola
+                        laboratorium dalam melihat informasi ruang,
+                        mengajukan peminjaman alat, serta memantau
+                        proses verifikasi dan persetujuan.
+                    </p>
+
+                    <div class="sip-actions">
+
+                        @auth
+
+                            @if(Auth::user()->role === 'mahasiswa')
+
+                                <a href="{{ route('student.dashboard') }}"
+                                   class="sip-btn sip-btn-primary">
+
+                                    <i class="bi bi-box-arrow-in-right"></i>
+
+                                    Buka Dashboard
+
+                                </a>
+
+                            @elseif(Auth::user()->role === 'staff')
+
+                                <a href="{{ route('staff.dashboard') }}"
+                                   class="sip-btn sip-btn-primary">
+
+                                    <i class="bi bi-speedometer2"></i>
+
+                                    Dashboard Staf
+
+                                </a>
+
+                            @else
+
+                                <a href="/kepala-lab/dashboard"
+                                   class="sip-btn sip-btn-primary">
+
+                                    <i class="bi bi-clipboard-check"></i>
+
+                                    Dashboard Kepala Lab
+
+                                </a>
+
+                            @endif
+
                         @else
-                            <a href="/kepala-lab/dashboard" class="btn btn-primary px-4 py-3 fw-bold rounded-3 shadow-sm d-inline-flex align-items-center gap-2" style="background:#2563eb; border:none;">
-                                <i class="bi bi-clipboard2-check"></i> Dashboard Persetujuan
+
+                            <a href="{{ route('login') }}"
+                               class="sip-btn sip-btn-primary">
+
+                                <i class="bi bi-box-arrow-in-right"></i>
+
+                                Masuk ke Akun
+
                             </a>
-                        @endif
-                    @else
-                        <a href="{{ route('login') }}" class="btn px-4 py-3 fw-bold rounded-3 shadow-sm d-inline-flex align-items-center gap-2 text-white" style="background:#2563eb; border:none;">
-                            <i class="bi bi-box-arrow-in-right"></i> Masuk ke Akun
-                        </a>
-                        <a href="{{ route('register') }}" class="btn btn-outline-light px-4 py-3 fw-semibold rounded-3 d-inline-flex align-items-center gap-2">
-                            <i class="bi bi-person-plus"></i> Registrasi Mahasiswa
-                        </a>
-                    @endauth
-                </div>
-            </div>
 
-            <div class="col-lg-5 d-none d-lg-block text-center position-relative">
-                <div class="p-4 mx-auto" style="max-width: 360px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 24px; backdrop-filter: blur(16px); box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
-                    <div class="d-flex align-items-center justify-content-center text-white mb-3 mx-auto rounded-circle" style="width: 76px; height: 76px; background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);">
-                        <i class="bi bi-cpu fs-1"></i>
+                            <a href="{{ route('register') }}"
+                               class="sip-btn sip-btn-outline">
+
+                                <i class="bi bi-person-plus"></i>
+
+                                Registrasi Mahasiswa
+
+                            </a>
+
+                        @endauth
+
                     </div>
-                    <h5 class="text-white fw-bold mb-1">SIP-LAB Intelligent</h5>
-                    <p class="text-white-50 small mb-4">Monitoring jadwal & inventaris instrumen riset terpadu.</p>
-                    
-                    <div class="d-flex flex-column gap-2 text-start">
-                        <div class="p-2 px-3 rounded-3 d-flex align-items-center justify-content-between" style="background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255,255,255,0.08);">
-                            <span class="text-white-50 small"><i class="bi bi-buildings me-2 text-info"></i>Lab AI & IoT</span>
-                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Tersedia</span>
+
+                </div>
+
+                {{-- RIGHT INFORMATION PANEL --}}
+
+                <div class="sip-panel-wrapper">
+
+                    <div class="sip-panel">
+
+                        <div class="sip-panel-icon">
+                            <i class="bi bi-cpu"></i>
                         </div>
-                        <div class="p-2 px-3 rounded-3 d-flex align-items-center justify-content-between" style="background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255,255,255,0.08);">
-                            <span class="text-white-50 small"><i class="bi bi-laptop me-2 text-warning"></i>Laptop Riset & GPU</span>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Siap Pakai</span>
-                        </div>
-                        <div class="p-2 px-3 rounded-3 d-flex align-items-center justify-content-between" style="background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255,255,255,0.08);">
-                            <span class="text-white-50 small"><i class="bi bi-check2-all me-2 text-success"></i>Verifikasi Staf & Kalab</span>
-                            <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Online</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Quick Stat Counters -->
-    <div class="row g-4 mb-5">
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-card-top">
-                    <div>
-                        <div class="stat-card-label">Ruang Laboratorium</div>
-                        <div class="stat-card-value">{{ \App\Models\Ruangan::count() }}</div>
-                    </div>
-                    <div class="stat-card-icon stat-icon-blue">
-                        <i class="bi bi-door-open"></i>
-                    </div>
-                </div>
-                <div class="stat-card-footer text-success">
-                    <i class="bi bi-check-circle"></i> Seluruh ruang siap pakai
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-card-top">
-                    <div>
-                        <div class="stat-card-label">Total Aset & Alat</div>
-                        <div class="stat-card-value">{{ \App\Models\Alat::count() }}</div>
-                    </div>
-                    <div class="stat-card-icon stat-icon-emerald">
-                        <i class="bi bi-box-seam"></i>
-                    </div>
-                </div>
-                <div class="stat-card-footer text-primary">
-                    <i class="bi bi-layers"></i> Terdata di inventaris
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-card-top">
-                    <div>
-                        <div class="stat-card-label">Peminjaman Selesai</div>
-                        <div class="stat-card-value">{{ \App\Models\Peminjaman::where('status', 'Selesai')->count() }}</div>
-                    </div>
-                    <div class="stat-card-icon stat-icon-purple">
-                        <i class="bi bi-calendar2-check"></i>
-                    </div>
-                </div>
-                <div class="stat-card-footer text-muted">
-                    <i class="bi bi-graph-up"></i> Tingkat persetujuan tinggi
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-card-top">
-                    <div>
-                        <div class="stat-card-label">Total Pengguna</div>
-                        <div class="stat-card-value">{{ \App\Models\User::count() }}</div>
-                    </div>
-                    <div class="stat-card-icon stat-icon-amber">
-                        <i class="bi bi-people"></i>
-                    </div>
-                </div>
-                <div class="stat-card-footer text-muted">
-                    <i class="bi bi-person-badge"></i> Mahasiswa & Staf
-                </div>
-            </div>
-        </div>
-    </div>
+                        <h2 class="sip-panel-title">
+                            SIP-LAB
+                        </h2>
 
-    <!-- Feature Pillars -->
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card-custom p-4 h-100">
-                <div class="stat-card-icon stat-icon-blue mb-3" style="width: 52px; height: 52px; font-size: 1.5rem;">
-                    <i class="bi bi-calendar-range"></i>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Penjadwalan Terstruktur</h5>
-                <p class="text-muted small mb-0" style="line-height: 1.6;">
-                    Hindari bentrokan jadwal praktikum dan riset. Sistem memastikan ketersediaan ruangan dan inventaris alat dapat diperiksa secara transparan sebelum diajukan.
-                </p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card-custom p-4 h-100">
-                <div class="stat-card-icon stat-icon-emerald mb-3" style="width: 52px; height: 52px; font-size: 1.5rem;">
-                    <i class="bi bi-shield-check"></i>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Verifikasi oleh Staf Sarpras</h5>
-                <p class="text-muted small mb-0" style="line-height: 1.6;">
-                    Alur peminjaman resmi dengan pemeriksaan dan keputusan langsung oleh Staf Sarpras Laboratorium.
-                </p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card-custom p-4 h-100">
-                <div class="stat-card-icon stat-icon-amber mb-3" style="width: 52px; height: 52px; font-size: 1.5rem;">
-                    <i class="bi bi-qr-code-scan"></i>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Pelacakan Status & Aset</h5>
-                <p class="text-muted small mb-0" style="line-height: 1.6;">
-                    Pantau tahapan pengajuan secara langsung mulai dari status Menunggu, Revisi, hingga Disetujui lengkap dengan catatan evaluator.
-                </p>
-            </div>
-        </div>
-    </div>
+                        <p class="sip-panel-description">
+                            Sistem pengelolaan laboratorium dan
+                            inventaris riset.
+                        </p>
 
-    <!-- Lab Availability Showcase Preview -->
-    <div class="card-custom p-4 mb-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-            <div>
-                <h4 class="fw-bold text-dark mb-1">Daftar Ruang Laboratorium Utama</h4>
-                <p class="text-muted small mb-0">Ruang riset dan praktikum yang siap digunakan untuk kegiatan akademik.</p>
-            </div>
-            @auth
-                <a href="{{ route('student.inventory') }}" class="btn btn-brand-primary">Lihat Seluruh Katalog <i class="bi bi-arrow-right"></i></a>
-            @else
-                <a href="{{ route('login') }}" class="btn btn-brand-primary">Login untuk Pinjam <i class="bi bi-arrow-right"></i></a>
-            @endauth
-        </div>
+                        <div class="sip-info-list">
 
-        <div class="row g-4">
-            @forelse(\App\Models\Ruangan::take(3)->get() as $room)
-                <div class="col-md-4">
-                    <div class="border rounded-4 p-3 bg-light-subtle h-100 d-flex flex-column justify-content-between" style="border-color: #e2e8f0 !important;">
-                        <div>
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="badge bg-primary-subtle text-primary fw-semibold px-2 py-1 rounded-pill small">{{ $room->kode_ruangan }}</span>
-                                <span class="badge-status {{ $room->status === 'tersedia' ? 'badge-success' : 'badge-warning' }}">
-                                    {{ ucfirst($room->status) }}
+                            {{-- Ruangan --}}
+
+                            <div class="sip-info-item">
+
+                                <div class="sip-info-label">
+
+                                    <i class="bi bi-building"></i>
+
+                                    <span>
+                                        Data ruang laboratorium
+                                    </span>
+
+                                </div>
+
+                                <span class="sip-info-value">
+                                    {{ $roomCount }} ruang
                                 </span>
+
                             </div>
-                            <h6 class="fw-bold text-dark mb-1">{{ $room->nama_ruangan }}</h6>
-                            <p class="text-muted small mb-3">{{ Str::limit($room->fasilitas, 85) }}</p>
+
+                            {{-- Inventaris --}}
+
+                            <div class="sip-info-item">
+
+                                <div class="sip-info-label">
+
+                                    <i class="bi bi-box-seam"></i>
+
+                                    <span>
+                                        Data alat dan inventaris
+                                    </span>
+
+                                </div>
+
+                                <span class="sip-info-value">
+                                    {{ $assetCount }} alat
+                                </span>
+
+                            </div>
+
+                            {{-- Peminjaman --}}
+
+                            <div class="sip-info-item">
+
+                                <div class="sip-info-label">
+
+                                    <i class="bi bi-clipboard-check"></i>
+
+                                    <span>
+                                        Peminjaman selesai
+                                    </span>
+
+                                </div>
+
+                                <span class="sip-info-value">
+                                    {{ $completedLoans }} data
+                                </span>
+
+                            </div>
+
                         </div>
-                        
-                        <div class="pt-3 border-top d-flex justify-content-between align-items-center small text-muted">
-                            <div><i class="bi bi-geo-alt text-primary me-1"></i>{{ $room->lokasi }}</div>
-                            <div><i class="bi bi-people text-secondary me-1"></i>{{ $room->kapasitas }} Kursi</div>
-                        </div>
+
                     </div>
+
                 </div>
-            @empty
-                <div class="col-12 text-center py-4 text-muted">Belum ada ruang laboratorium yang terdata.</div>
-            @endforelse
+
+            </div>
+
         </div>
-    </div>
-</div>
+
+    </section>
+
+</main>
+
 @endsection
