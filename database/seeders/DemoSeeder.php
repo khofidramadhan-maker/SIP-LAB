@@ -97,7 +97,7 @@ class DemoSeeder extends Seeder
 
         // 3. Alat
         $alat1 = Alat::firstOrCreate(
-            ['kode_inventaris' => 'AST-001'],
+            ['kode_inventaris' => 'KOM-001'],
             [
                 'nama_alat' => 'Laptop Riset GPU RTX',
                 'kategori' => 'Komputer & IT',
@@ -108,7 +108,7 @@ class DemoSeeder extends Seeder
         );
 
         $alat2 = Alat::firstOrCreate(
-            ['kode_inventaris' => 'AST-002'],
+            ['kode_inventaris' => 'ALA-001'],
             [
                 'nama_alat' => 'Multimeter Digital Sanwa',
                 'kategori' => 'Alat Ukur',
@@ -119,7 +119,7 @@ class DemoSeeder extends Seeder
         );
 
         $alat3 = Alat::firstOrCreate(
-            ['kode_inventaris' => 'AST-003'],
+            ['kode_inventaris' => 'ALA-002'],
             [
                 'nama_alat' => 'Osiloskop Digital Rigol',
                 'kategori' => 'Alat Ukur',
@@ -130,7 +130,7 @@ class DemoSeeder extends Seeder
         );
 
         $alat4 = Alat::firstOrCreate(
-            ['kode_inventaris' => 'AST-004'],
+            ['kode_inventaris' => 'ELE-001'],
             [
                 'nama_alat' => 'Kit Sensor IoT ESP32',
                 'kategori' => 'Elektronika',
@@ -141,7 +141,7 @@ class DemoSeeder extends Seeder
         );
 
         $alat5 = Alat::firstOrCreate(
-            ['kode_inventaris' => 'AST-005'],
+            ['kode_inventaris' => 'MUL-001'],
             [
                 'nama_alat' => 'Proyektor Portable HDMI',
                 'kategori' => 'Multimedia',
@@ -152,7 +152,7 @@ class DemoSeeder extends Seeder
         );
 
         // Tiap jenis alat langsung dapat kode barang per unit fisik,
-        // mis. AST-004-01 s.d. AST-004-15 untuk Kit Sensor IoT ESP32.
+        // mis. ELE-001-U001 s.d. ELE-001-U015 untuk Kit Sensor IoT ESP32.
         foreach ([$alat1, $alat2, $alat3, $alat4, $alat5] as $alat) {
             UnitAlat::ensureForAlat($alat);
         }

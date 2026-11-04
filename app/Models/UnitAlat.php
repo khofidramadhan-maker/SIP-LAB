@@ -45,7 +45,7 @@ class UnitAlat extends Model
 
     public static function codeFor(Alat $alat, int $number): string
     {
-        return $alat->kode_inventaris.'-'.str_pad((string) $number, 2, '0', STR_PAD_LEFT);
+        return $alat->kode_inventaris.'-U'.str_pad((string) $number, 3, '0', STR_PAD_LEFT);
     }
 
     /**

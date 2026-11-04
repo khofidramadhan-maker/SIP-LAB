@@ -159,18 +159,18 @@
                                 <form method="POST" action="{{ route('staff.verify', $booking) }}" class="d-inline">
                                     @csrf
                                     <input type="hidden" name="status" value="approved">
-                                    <button type="submit" class="btn btn-sm btn-success px-3" onclick="return confirm('Verifikasi dan teruskan pengajuan ini ke Kepala Laboratorium?')">
+                                    <button type="submit" class="btn btn-sm btn-success px-3" onclick="return confirm('Staf Sarpras menyetujui pengajuan peminjaman ini?')">
                                         <i class="bi bi-check-lg"></i> Setujui
                                     </button>
                                 </form>
 
-                                <!-- Button Trigger Modal Reject/Revisi -->
+                                <!-- Button Trigger Modal Reject -->
                                 <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#revisiModal{{ $booking->id }}">
-                                    <i class="bi bi-pencil-square"></i> Revisi
+                                    <i class="bi bi-x-lg"></i> Ditolak
                                 </button>
                             </div>
 
-                            <!-- Modal Catatan Revisi -->
+                            <!-- Modal Alasan Penolakan -->
                             <div class="modal fade text-start" id="revisiModal{{ $booking->id }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content border-0 shadow" style="border-radius: 16px;">
@@ -178,16 +178,16 @@
                                             @csrf
                                             <input type="hidden" name="status" value="rejected">
                                             <div class="modal-header border-bottom">
-                                                <h6 class="modal-title fw-bold">Instruksi Revisi {{ $booking->kode_peminjaman }}</h6>
+                                                <h6 class="modal-title fw-bold">Alasan Penolakan {{ $booking->kode_peminjaman }}</h6>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <p class="text-muted small mb-3">Tuliskan instruksi atau alasan perbaikan kepada mahasiswa:</p>
-                                                <textarea name="notes" class="form-control" rows="4" placeholder="Contoh: Jadwal bertabrakan dengan jadwal praktikum. Silakan ubah jam atau pilih ruangan laboratorium lain..." required></textarea>
+                                                <p class="text-muted small mb-3">Tuliskan alasan penolakan pengajuan kepada mahasiswa:</p>
+                                                <textarea name="notes" class="form-control" rows="4" placeholder="Tuliskan alasan penolakan pengajuan..." required></textarea>
                                             </div>
                                             <div class="modal-footer border-top">
                                                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                                                <button type="submit" class="btn btn-danger">Kirim Instruksi Revisi</button>
+                                                <button type="submit" class="btn btn-danger">Tolak Pengajuan</button>
                                             </div>
                                         </form>
                                     </div>

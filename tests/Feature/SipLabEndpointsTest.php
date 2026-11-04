@@ -319,6 +319,7 @@ class SipLabEndpointsTest extends TestCase
         $included = $this->makeBooking([
             'kode_peminjaman' => 'TEST-REPORT-IN',
             'tanggal_pinjam' => today()->format('Y-m-d'),
+            'keperluan' => 'Pengujian laporan dengan keterangan lengkap tanpa pemotongan',
         ]);
         $excluded = $this->makeBooking([
             'kode_peminjaman' => 'TEST-REPORT-OUT',
@@ -332,6 +333,13 @@ class SipLabEndpointsTest extends TestCase
             ]))
             ->assertOk()
             ->assertSee($included->kode_peminjaman)
+            ->assertSee('report-print-area', false)
+            ->assertSee('display: block;', false)
+            ->assertSee('body *', false)
+            ->assertSee('data-csv=', false)
+            ->assertSee('Nama Pemohon')
+            ->assertSee('Tanggal Pengajuan')
+            ->assertSee('Pengujian laporan dengan keterangan lengkap tanpa pemotongan')
             ->assertDontSee($excluded->kode_peminjaman);
 
         $this->get(route('lab-head.reports', [
@@ -608,9 +616,46 @@ class SipLabEndpointsTest extends TestCase
             ->count());
         $this->assertDatabaseHas('unit_alat', [
             'alat_id' => $this->asset->id,
-            'kode_unit' => 'AST-001-01',
+            'kode_unit' => 'AST-001-U002',
             'status' => UnitAlat::STATUS_TERSEDIA,
         ]);
+    }
+
+    public function test_asset_codes_are_generated_by_category_and_update_with_category(): void
+    {
+        $this->actingAs($this->staff)
+            ->post(route('staff.alat.store'), [
+                'nama_alat' => 'Multimeter Baru',
+                'kategori' => 'Alat Ukur',
+                'jumlah_total' => 1,
+                'kondisi' => 'baik',
+                'status' => 'tersedia',
+            ])
+            ->assertRedirect(route('staff.alat.index'));
+
+        $newAsset = Alat::where('nama_alat', 'Multimeter Baru')->firstOrFail();
+        $this->assertSame('ALA-001', $newAsset->kode_inventaris);
+        $this->assertDatabaseHas('unit_alat', [
+            'alat_id' => $newAsset->id,
+            'kode_unit' => 'ALA-001-U001',
+        ]);
+
+        $unit = UnitAlat::create([
+            'alat_id' => $this->asset->id,
+            'kode_unit' => 'AST-001-U001',
+            'status' => UnitAlat::STATUS_TERSEDIA,
+        ]);
+
+        $this->put(route('staff.alat.update', $this->asset), [
+            'nama_alat' => $this->asset->nama_alat,
+            'kategori' => 'Elektronika',
+            'jumlah_total' => 1,
+            'kondisi' => 'baik',
+            'status' => 'tersedia',
+        ])->assertRedirect(route('staff.alat.index'));
+
+        $this->assertSame('ELE-001', $this->asset->fresh()->kode_inventaris);
+        $this->assertSame('ELE-001-U001', $unit->fresh()->kode_unit);
     }
 
     public function test_handover_and_return_record_conditions_damage_logs_and_notifications(): void

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Alat extends Model
 {
@@ -49,5 +50,18 @@ class Alat extends Model
     public function getKodeAlatAttribute(): ?string
     {
         return $this->kode_inventaris;
+    }
+
+    public static function nextInventoryCode(string $category): string
+    {
+        $categoryCode = preg_replace('/[^A-Z0-9]/', '', Str::upper(Str::ascii($category)));
+        $prefix = substr($categoryCode, 0, 3) ?: 'ALT';
+        $number = 1;
+
+        do {
+            $code = $prefix.'-'.str_pad((string) $number++, 3, '0', STR_PAD_LEFT);
+        } while (static::query()->where('kode_inventaris', $code)->exists());
+
+        return $code;
     }
 }

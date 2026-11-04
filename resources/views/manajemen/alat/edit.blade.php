@@ -34,13 +34,12 @@
                 @csrf
                 @method('PUT')
                 <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">Kode Inventaris <span class="text-danger">*</span></label>
-                        <input type="text" name="kode_inventaris" class="form-control @error('kode_inventaris') is-invalid @enderror"
-                               value="{{ old('kode_inventaris', $alat->kode_inventaris) }}" required>
-                        @error('kode_inventaris') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Kode Inventaris</label>
+                        <div class="form-control bg-light">{{ $alat->kode_inventaris }}</div>
+                        <div class="form-text">Kode akan diperbarui otomatis jika kategori diubah.</div>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-12">
                         <label class="form-label fw-semibold">Nama Alat <span class="text-danger">*</span></label>
                         <input type="text" name="nama_alat" class="form-control @error('nama_alat') is-invalid @enderror"
                                value="{{ old('nama_alat', $alat->nama_alat) }}" required>
@@ -88,4 +87,3 @@
     </div>
 </div>
 @endsection
-

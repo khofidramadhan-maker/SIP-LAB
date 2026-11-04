@@ -26,7 +26,13 @@ class ReportController extends Controller
             ->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('tanggal_pinjam', '<=', $date));
 
         $bookings = (clone $bookingsQuery)
-            ->with(['user', 'detailRuangan.ruangan', 'detailAlat.alat', 'persetujuan.user'])
+            ->with([
+                'user',
+                'detailRuangan.ruangan',
+                'detailAlat.alat',
+                'detailAlat.detailAlatUnits.unitAlat',
+                'persetujuan.user',
+            ])
             ->latest()
             ->get();
         $rooms = Ruangan::count();

@@ -10,8 +10,8 @@ return new class extends Migration
     /**
      * Kode barang per unit fisik, bukan per jenis alat.
      *
-     * Satu baris `alat` (mis. AST-004, jumlah_total 15) mendapat 15 baris
-     * `unit_alat` dengan kode AST-004-01 s.d. AST-004-15. Peminjaman tidak
+     * Satu baris `alat` (mis. ELE-001, jumlah_total 15) mendapat 15 baris
+     * `unit_alat` dengan kode ELE-001-U001 s.d. ELE-001-U015. Peminjaman tidak
      * lagi hanya mencatat "2 unit", tapi unit mana persis yang diserahkan
      * (detail_alat_unit) dan unit mana persis yang rusak saat kembali
      * (kerusakan_alat.unit_alat_id).
@@ -106,6 +106,12 @@ return new class extends Migration
             }
         }
 
+        if (Schema::hasColumn('detail_alat_unit', 'alat_unit_id')) {
+            Schema::table('detail_alat_unit', function (Blueprint $table) {
+                $table->dropColumn('alat_unit_id');
+            });
+        }
+
         if (! Schema::hasColumn('kerusakan_alat', 'unit_alat_id')) {
             Schema::table('kerusakan_alat', function (Blueprint $table) {
                 $table->foreignId('unit_alat_id')->nullable()->after('detail_alat_id')
@@ -121,7 +127,7 @@ return new class extends Migration
             $number = 1;
 
             while ($availableCount < (int) $alat->jumlah_total) {
-                $code = $alat->kode_inventaris.'-'.str_pad((string) $number++, 2, '0', STR_PAD_LEFT);
+                $code = $alat->kode_inventaris.'-U'.str_pad((string) $number++, 3, '0', STR_PAD_LEFT);
                 $existingUnit = DB::table('unit_alat')->where('kode_unit', $code)->first();
 
                 if ($existingUnit) {

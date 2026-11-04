@@ -156,8 +156,22 @@ class StaffController extends Controller
             $booking->load('detailAlat.alat');
 
             foreach ($booking->detailAlat as $detail) {
+                $selectedUnitIds = array_values((array) ($validated['units'][$detail->id] ?? []));
+                $selectedUnitIds = array_map('intval', $selectedUnitIds);
+                $conditionMap = is_array($validated['unit_conditions'][$detail->id] ?? null)
+                    ? $validated['unit_conditions'][$detail->id]
+                    : [];
+
+                $alatLabel = $detail->alat?->nama_alat ?? 'alat ini';
+
+                if (count($selectedUnitIds) !== (int) $detail->jumlah) {
+                    throw ValidationException::withMessages([
+                        "units.{$detail->id}" => "Pilih tepat {$detail->jumlah} unit untuk {$alatLabel}.",
+                    ]);
+                }
+
                 $summary = [];
-                foreach ($validated['units'][$detail->id] as $unitId) {
+                foreach ($selectedUnitIds as $unitId) {
                     $unit = UnitAlat::query()->lockForUpdate()->findOrFail($unitId);
 
                     if ($unit->alat_id !== $detail->alat_id || $unit->status !== UnitAlat::STATUS_TERSEDIA) {
@@ -166,12 +180,21 @@ class StaffController extends Controller
                         ]);
                     }
 
-                    $condition = trim($validated['unit_conditions'][$detail->id][$unitId] ?? '');
+                    $condition = trim((string) ($conditionMap[$unitId] ?? ''));
                     if ($condition === '') {
                         throw ValidationException::withMessages([
                             "unit_conditions.{$detail->id}.{$unitId}" => "Tulis kondisi awal untuk unit {$unit->kode_unit}.",
                         ]);
                     }
+
+                    if (DetailAlatUnit::where('detail_alat_id', $detail->id)
+                        ->where('unit_alat_id', $unit->id)
+                        ->exists()) {
+                        throw ValidationException::withMessages([
+                            "units.{$detail->id}" => "Unit {$unit->kode_unit} sudah tercatat pada peminjaman ini.",
+                        ]);
+                    }
+
                     DetailAlatUnit::create([
                         'detail_alat_id' => $detail->id,
                         'unit_alat_id' => $unit->id,

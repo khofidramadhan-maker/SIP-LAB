@@ -28,13 +28,7 @@
             <form action="{{ route('staff.alat.store') }}" method="POST">
                 @csrf
                 <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">Kode Inventaris <span class="text-danger">*</span></label>
-                        <input type="text" name="kode_inventaris" class="form-control @error('kode_inventaris') is-invalid @enderror"
-                               value="{{ old('kode_inventaris') }}" placeholder="mis. INV-001" required>
-                        @error('kode_inventaris') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-                    <div class="col-md-8">
+                    <div class="col-12">
                         <label class="form-label fw-semibold">Nama Alat <span class="text-danger">*</span></label>
                         <input type="text" name="nama_alat" class="form-control @error('nama_alat') is-invalid @enderror"
                                value="{{ old('nama_alat') }}" placeholder="mis. Mikroskop Optik" required>
@@ -45,6 +39,7 @@
                         <input type="text" name="kategori" class="form-control @error('kategori') is-invalid @enderror"
                                value="{{ old('kategori', 'Umum') }}" placeholder="mis. Optik, Elektronika" required>
                         @error('kategori') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="form-text">Kode inventaris dibuat otomatis berdasarkan kategori.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Jumlah Total <span class="text-danger">*</span></label>
@@ -82,4 +77,3 @@
     </div>
 </div>
 @endsection
-

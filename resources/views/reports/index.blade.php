@@ -9,6 +9,14 @@
 
 <style>
     /* ===== REPORT PAGE ===== */
+    .report-print-area {
+        display: block;
+    }
+
+    .report-print-heading {
+        display: none;
+    }
+
     .report-page {
         color: #263445;
     }
@@ -378,26 +386,50 @@
     @media print {
         @page {
             size: landscape;
-            margin: 12mm;
+            margin: 10mm;
         }
 
-        body {
+        body * {
+            visibility: hidden !important;
+        }
+
+        .report-print-area,
+        .report-print-area * {
+            visibility: visible !important;
+        }
+
+        .report-print-area {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            display: block !important;
+            width: 100% !important;
+            color: #222 !important;
             background: #fff !important;
+            font: 9pt/1.35 Arial, sans-serif !important;
         }
 
-        .report-page .no-print,
-        .sidebar,
-        .navbar,
-        header,
-        nav {
-            display: none !important;
+        .report-print-area * {
+            box-sizing: border-box !important;
         }
 
-        .report-page .report-card,
-        .report-page .stat-card {
-            border: 1px solid #ddd !important;
-            box-shadow: none !important;
-            break-inside: avoid;
+        .report-print-heading {
+            display: block !important;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #334155;
+        }
+
+        .report-print-heading h1 {
+            margin: 0 0 3px;
+            color: #111827;
+            font-size: 17pt;
+        }
+
+        .report-print-heading p {
+            margin: 0;
+            color: #475569;
+            font-size: 9pt;
         }
 
         .report-page .table-custom-wrapper {
@@ -407,13 +439,19 @@
 
         .report-page .table-custom {
             min-width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
         }
 
         .report-page .table-custom thead th,
         .report-page .table-custom tbody td {
-            padding: 8px !important;
-            font-size: 9px !important;
+            padding: 6px !important;
+            font-size: 8pt !important;
             color: #222 !important;
+            border: 1px solid #cbd5e1 !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            vertical-align: top !important;
         }
 
         .report-page .table-custom thead th {
@@ -422,14 +460,32 @@
             print-color-adjust: exact;
         }
 
+        .report-page .table-custom th:nth-child(1) { width: 15%; }
+        .report-page .table-custom th:nth-child(2) { width: 20%; }
+        .report-page .table-custom th:nth-child(3) { width: 15%; }
+        .report-page .table-custom th:nth-child(4) { width: 10%; }
+        .report-page .table-custom th:nth-child(5) { width: 9%; }
+        .report-page .table-custom th:nth-child(6) { width: 21%; }
+        .report-page .table-custom th:nth-child(7) { width: 10%; }
+
+        .report-page .booking-code,
+        .report-page .time-badge,
         .report-page .badge-status {
-            border: 1px solid #ccc;
+            padding: 0 !important;
+            border: 0 !important;
             color: #222 !important;
-            background: #fff !important;
+            background: transparent !important;
+            white-space: normal !important;
         }
 
-        .report-page .stat-card-value {
+        .report-page .primary-info,
+        .report-page .secondary-info {
             color: #222 !important;
+            font-size: 8pt !important;
+        }
+
+        .report-page .table-custom tr {
+            break-inside: avoid;
         }
     }
 </style>
@@ -614,184 +670,228 @@
         </form>
 
         {{-- TABLE --}}
-        <div class="table-custom-wrapper">
-            <table class="table-custom" id="reportTable">
+        <div class="report-print-area">
+            <header class="report-print-heading">
+                <h1>Laporan Peminjaman SIP-LAB</h1>
+                <p>
+                    Periode:
+                    @if(!empty($filters['date_from']) && !empty($filters['date_to']))
+                        {{ $filters['date_from'] }} sampai {{ $filters['date_to'] }}
+                    @elseif(!empty($filters['date_from']))
+                        sejak {{ $filters['date_from'] }}
+                    @elseif(!empty($filters['date_to']))
+                        sampai {{ $filters['date_to'] }}
+                    @else
+                        Semua tanggal
+                    @endif
+                    &middot; Total {{ $bookings->count() }} transaksi
+                </p>
+            </header>
 
-                <thead>
-                    <tr>
-                        <th>Kode & Pemohon</th>
-                        <th>Keperluan</th>
-                        <th>Ruang Laboratorium</th>
-                        <th>Tanggal</th>
-                        <th>Waktu</th>
-                        <th>Peralatan</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
+            <div class="table-custom-wrapper">
+                <table class="table-custom" id="reportTable">
 
-                <tbody>
-
-                    @forelse($bookings as $booking)
-
-                        @php
-                            $ruang = $booking->detailRuangan->first()?->ruangan;
-                            $user = $booking->user;
-                        @endphp
-
+                    <thead>
                         <tr>
-                            <td>
-                                <span class="booking-code">
-                                    {{ $booking->kode_peminjaman }}
-                                </span>
+                            <th>Kode & Pemohon</th>
+                            <th>Keperluan</th>
+                            <th>Ruang Laboratorium</th>
+                            <th>Tanggal</th>
+                            <th>Waktu</th>
+                            <th>Peralatan</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
 
-                                <div class="primary-info">
-                                    {{ $user->nama ?? ($user->name ?? '-') }}
-                                </div>
+                    <tbody>
 
-                                <div class="secondary-info">
-                                    NIM: {{ $user->nim ?? ($user->email ?? '-') }}
-                                </div>
-                            </td>
+                        @forelse($bookings as $booking)
 
-                            <td>
-                                <div class="primary-info">
-                                    {{ Str::limit($booking->keperluan, 45) }}
-                                </div>
-                                <div class="secondary-info">
-                                    Diajukan:
-                                    {{ $booking->created_at?->format('d/m/Y') ?? '-' }}
-                                </div>
-                            </td>
+                            @php
+                                $ruang = $booking->detailRuangan->first()?->ruangan;
+                                $user = $booking->user;
+                                $equipmentSummary = $booking->detailAlat->map(function ($item) {
+                                    $asset = $item->alat;
+                                    $label = ($asset?->nama_alat ?? 'Alat')
+                                        .' ('.($asset?->kode_inventaris ?? '-').') — '.$item->jumlah.' unit';
 
-                            <td>
-                                <div class="primary-info">
-                                    {{ $ruang?->nama_ruangan ?? 'Tanpa ruang' }}
-                                </div>
-                                <div class="secondary-info">
-                                    <i class="bi bi-geo-alt me-1"></i>
-                                    {{ $ruang?->lokasi ?? '-' }}
-                                </div>
-                            </td>
+                                    if ($item->detailAlatUnits->isNotEmpty()) {
+                                        $label .= ' ['.$item->detailAlatUnits
+                                            ->map(fn ($row) => $row->unitAlat?->kode_unit)
+                                            ->filter()
+                                            ->join(', ').']';
+                                    }
 
-                            <td>
-                                <div class="primary-info">
-                                    {{ $booking->tanggal_pinjam
+                                    return $label;
+                                })->join('; ');
+                                $csvValues = [
+                                    $booking->kode_peminjaman,
+                                    $user->nama ?? ($user->name ?? '-'),
+                                    $user->nim ?? '-',
+                                    $user->email ?? '-',
+                                    $booking->keperluan,
+                                    $booking->created_at?->format('d/m/Y') ?? '-',
+                                    $ruang?->nama_ruangan ?? 'Tanpa ruang',
+                                    $ruang?->lokasi ?? '-',
+                                    $booking->tanggal_pinjam
                                         ? \Carbon\Carbon::parse($booking->tanggal_pinjam)->format('d/m/Y')
-                                        : '-' }}
-                                </div>
-                            </td>
+                                        : '-',
+                                    $booking->jam_mulai ? substr($booking->jam_mulai, 0, 5) : '-',
+                                    $booking->jam_selesai ? substr($booking->jam_selesai, 0, 5) : '-',
+                                    $equipmentSummary ?: 'Tidak ada alat',
+                                    $booking->status,
+                                ];
+                            @endphp
 
-                            <td>
-                                <span class="time-badge">
-                                    {{ $booking->jam_mulai ? substr($booking->jam_mulai, 0, 5) : '-' }}
-                                    -
-                                    {{ $booking->jam_selesai ? substr($booking->jam_selesai, 0, 5) : '-' }}
-                                </span>
-                            </td>
-
-                            <td>
-                                @if($booking->detailAlat->count() > 0)
+                            <tr data-csv='@json($csvValues)'>
+                                <td>
+                                    <span class="booking-code">
+                                        {{ $booking->kode_peminjaman }}
+                                    </span>
 
                                     <div class="primary-info">
-                                        {{ $booking->detailAlat->count() }} jenis alat
+                                        {{ $user->nama ?? ($user->name ?? '-') }}
                                     </div>
 
                                     <div class="secondary-info">
-                                        {{ $booking->detailAlat->pluck('alat.nama_alat')->filter()->join(', ') }}
+                                        NIM: {{ $user->nim ?? ($user->email ?? '-') }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="primary-info">
+                                        {{ $booking->keperluan }}
+                                    </div>
+                                    <div class="secondary-info">
+                                        Diajukan: {{ $booking->created_at?->format('d/m/Y') ?? '-' }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="primary-info">
+                                        {{ $ruang?->nama_ruangan ?? 'Tanpa ruang' }}
+                                    </div>
+                                    <div class="secondary-info">
+                                        {{ $ruang?->lokasi ?? '-' }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="primary-info">
+                                        {{ $booking->tanggal_pinjam
+                                            ? \Carbon\Carbon::parse($booking->tanggal_pinjam)->format('d/m/Y')
+                                            : '-' }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="time-badge">
+                                        {{ $booking->jam_mulai ? substr($booking->jam_mulai, 0, 5) : '-' }}
+                                        -
+                                        {{ $booking->jam_selesai ? substr($booking->jam_selesai, 0, 5) : '-' }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if($booking->detailAlat->count() > 0)
+                                        <ul class="mb-0 ps-3">
+                                            @foreach($booking->detailAlat as $item)
+                                                <li class="mb-1">
+                                                    {{ $item->alat?->nama_alat ?? 'Alat' }}
+                                                    ({{ $item->alat?->kode_inventaris ?? '-' }}) — {{ $item->jumlah }} unit
+                                                    @if($item->detailAlatUnits->isNotEmpty())
+                                                        <div class="secondary-info">
+                                                            Kode unit:
+                                                            {{ $item->detailAlatUnits->map(fn ($row) => $row->unitAlat?->kode_unit)->filter()->join(', ') }}
+                                                        </div>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        <span class="secondary-info">Tidak ada alat</span>
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if($booking->status === 'Disetujui')
+
+                                        <span class="badge-status badge-success">
+                                            Disetujui
+                                        </span>
+
+                                    @elseif($booking->status === 'Sedang Dipinjam')
+
+                                        <span class="badge-status badge-info">
+                                            Sedang Dipinjam
+                                        </span>
+
+                                    @elseif($booking->status === 'Selesai')
+
+                                        <span class="badge-status badge-success">
+                                            Selesai
+                                        </span>
+
+                                    @elseif(in_array($booking->status, [
+                                        'Menunggu Verifikasi',
+                                        'Menunggu Pemeriksaan Staf Sarpras'
+                                    ], true))
+
+                                        <span class="badge-status badge-pending">
+                                            {{ $booking->status }}
+                                        </span>
+
+                                    @elseif($booking->status === 'Perlu Revisi')
+
+                                        <span class="badge-status badge-warning">
+                                            Perlu Revisi
+                                        </span>
+
+                                    @else
+
+                                        <span class="badge-status badge-danger">
+                                            {{ $booking->status }}
+                                        </span>
+
+                                    @endif
+                                </td>
+                            </tr>
+
+                        @empty
+
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    <i class="bi bi-clipboard-x"></i>
+
+                                    <div class="empty-state-title">
+                                        Belum ada data peminjaman
                                     </div>
 
-                                @else
-                                    <span class="secondary-info">Tidak ada alat</span>
-                                @endif
-                            </td>
+                                    <p class="empty-state-description">
+                                        Data peminjaman akan ditampilkan di sini setelah tersedia.
+                                    </p>
+                                </td>
+                            </tr>
 
-                            <td>
-                                @if($booking->status === 'Disetujui')
+                        @endforelse
 
-                                    <span class="badge-status badge-success">
-                                        Disetujui
-                                    </span>
-
-                                @elseif($booking->status === 'Sedang Dipinjam')
-
-                                    <span class="badge-status badge-info">
-                                        Sedang Dipinjam
-                                    </span>
-
-                                @elseif($booking->status === 'Selesai')
-
-                                    <span class="badge-status badge-success">
-                                        Selesai
-                                    </span>
-
-                                @elseif(in_array($booking->status, [
-                                    'Menunggu Verifikasi',
-                                    'Menunggu Pemeriksaan Staf Sarpras'
-                                ], true))
-
-                                    <span class="badge-status badge-pending">
-                                        Menunggu Verifikasi
-                                    </span>
-
-                                @elseif($booking->status === 'Perlu Revisi')
-
-                                    <span class="badge-status badge-warning">
-                                        Perlu Revisi
-                                    </span>
-
-                                @else
-
-                                    <span class="badge-status badge-danger">
-                                        {{ $booking->status }}
-                                    </span>
-
-                                @endif
-                            </td>
-                        </tr>
-
-                    @empty
-
-                        <tr>
+                        <tr id="searchEmptyState" style="display: none;">
                             <td colspan="7" class="empty-state">
-                                <i class="bi bi-clipboard-x"></i>
+                                <i class="bi bi-search"></i>
 
                                 <div class="empty-state-title">
-                                    Belum ada data peminjaman
+                                    Data tidak ditemukan
                                 </div>
 
                                 <p class="empty-state-description">
-                                    Data peminjaman akan ditampilkan di sini setelah tersedia.
+                                    Coba gunakan kata kunci pencarian yang berbeda.
                                 </p>
                             </td>
                         </tr>
 
-                    @endforelse
-
-                    <tr id="searchEmptyState" style="display: none;">
-                        <td colspan="7" class="empty-state">
-                            <i class="bi bi-search"></i>
-
-                            <div class="empty-state-title">
-                                Data tidak ditemukan
-                            </div>
-
-                            <p class="empty-state-description">
-                                Coba gunakan kata kunci pencarian yang berbeda.
-                            </p>
-                        </td>
-                    </tr>
-
-                </tbody>
-            </table>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
-            <span class="secondary-info">
-                Menampilkan data peminjaman sesuai periode yang dipilih.
-            </span>
-            <span class="secondary-info">
-                SIP-LAB &middot; Laporan Operasional
-            </span>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
     </div>
@@ -828,31 +928,31 @@
     // ===== EXPORT CSV =====
     function exportTableToCSV(filename) {
         const table = document.getElementById('reportTable');
-        const rows = table.querySelectorAll(
-            'thead tr, tbody tr:not(#searchEmptyState)'
-        );
+        const headers = [
+            'Kode Peminjaman',
+            'Nama Pemohon',
+            'NIM',
+            'Email',
+            'Keperluan',
+            'Tanggal Pengajuan',
+            'Ruang Laboratorium',
+            'Lokasi Ruang',
+            'Tanggal Peminjaman',
+            'Jam Mulai',
+            'Jam Selesai',
+            'Peralatan',
+            'Status'
+        ];
+        const rows = Array.from(table.querySelectorAll('tbody tr[data-csv]'))
+            .filter(row => row.style.display !== 'none');
 
-        const csv = [];
+        const formatCSVRow = values => values
+            .map(value => '"' + String(value ?? '').replace(/"/g, '""') + '"')
+            .join(',');
+        const csv = [formatCSVRow(headers)];
 
         rows.forEach(row => {
-            if (row.querySelector('.empty-state')) {
-                return;
-            }
-
-            const cols = row.querySelectorAll('th, td');
-            const data = [];
-
-            cols.forEach(col => {
-                let value = col.innerText
-                    .replace(/(\r\n|\n|\r)/gm, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-
-                value = value.replace(/"/g, '""');
-                data.push('"' + value + '"');
-            });
-
-            csv.push(data.join(','));
+            csv.push(formatCSVRow(JSON.parse(row.dataset.csv)));
         });
 
         if (csv.length <= 1) {

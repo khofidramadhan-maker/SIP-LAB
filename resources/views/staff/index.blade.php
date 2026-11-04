@@ -98,7 +98,7 @@
                                 </form>
 
                                 <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#staffRevisiModal{{ $booking->id }}">
-                                    <i class="bi bi-x-lg"></i> Tolak
+                                    <i class="bi bi-x-lg"></i> Ditolak
                                 </button>
                             </div>
 

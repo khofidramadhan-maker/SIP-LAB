@@ -9,6 +9,7 @@ use App\Models\UnitAlat;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -222,7 +223,6 @@ class ManajemenController extends Controller
     public function alatStore(Request $request)
     {
         $data = $request->validate([
-            'kode_inventaris' => 'required|string|max:30|unique:alat,kode_inventaris',
             'nama_alat'       => 'required|string|max:100',
             'kategori'        => 'required|string|max:100',
             'jumlah_total'    => 'required|integer|min:0',
@@ -230,7 +230,12 @@ class ManajemenController extends Controller
             'status'          => 'required|in:tersedia,dipinjam,perbaikan',
         ]);
 
-        $alat = Alat::create($data);
+        $alat = DB::transaction(function () use ($data) {
+            $data['kode_inventaris'] = Alat::nextInventoryCode($data['kategori']);
+
+            return Alat::create($data);
+        });
+        $data['kode_inventaris'] = $alat->kode_inventaris;
 
         // Tiap unit fisik langsung dapat kode barang sendiri.
         UnitAlat::ensureForAlat($alat);
@@ -265,7 +270,6 @@ class ManajemenController extends Controller
     public function alatUpdate(Request $request, Alat $alat)
     {
         $data = $request->validate([
-            'kode_inventaris' => ['required', 'string', 'max:30', Rule::unique('alat')->ignore($alat->id)],
             'nama_alat'       => 'required|string|max:100',
             'kategori'        => 'required|string|max:100',
             'jumlah_total'    => 'required|integer|min:0',
@@ -275,6 +279,9 @@ class ManajemenController extends Controller
 
         $sebelum = $alat->only(['kode_inventaris', 'nama_alat', 'kategori', 'jumlah_total', 'kondisi', 'status']);
         $kodeLama = $alat->kode_inventaris;
+        if ($data['kategori'] !== $alat->kategori) {
+            $data['kode_inventaris'] = Alat::nextInventoryCode($data['kategori']);
+        }
         $alat->update($data);
 
         // Kalau kode jenis berubah, kode unit ikut berubah prefix-nya
