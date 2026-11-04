@@ -245,13 +245,16 @@ class ManajemenController extends Controller
 
     public function alatShow(Alat $alat)
     {
+        $alat->load('units.kerusakanAlat.pengembalian.peminjaman');
+        $rusakCount = $alat->units->where('status', UnitAlat::STATUS_RUSAK)->count();
+
         $riwayat = LogAktivitas::where('jenis_data', 'alat')
             ->where('kode_identitas', $alat->kode_inventaris)
             ->with('user')
             ->orderByDesc('waktu')
             ->get();
 
-        return view('manajemen.alat.show', compact('alat', 'riwayat'));
+        return view('manajemen.alat.show', compact('alat', 'riwayat', 'rusakCount'));
     }
 
     public function alatEdit(Alat $alat)

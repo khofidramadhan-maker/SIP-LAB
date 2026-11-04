@@ -11,10 +11,12 @@ use App\Models\Notifikasi;
 use App\Models\Peminjaman;
 use App\Models\Persetujuan;
 use App\Models\Ruangan;
-use App\Models\SerahTerima;
+use App\Models\UnitAlat;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SipLabEndpointsTest extends TestCase
@@ -22,11 +24,17 @@ class SipLabEndpointsTest extends TestCase
     use RefreshDatabase;
 
     private User $student;
+
     private User $otherStudent;
+
     private User $staff;
+
     private User $head;
+
     private Ruangan $room;
+
     private Ruangan $otherRoom;
+
     private Alat $asset;
 
     protected function setUp(): void
@@ -93,6 +101,10 @@ class SipLabEndpointsTest extends TestCase
             ->assertSee('Ruang Laboratorium')
             ->assertSee('Keperluan Peminjaman')
             ->assertSee('Peralatan yang Dipinjam')
+            ->assertSee('booking-proof-print', false)
+            ->assertSee('Kode Peminjaman')
+            ->assertSee('Dokumen Pendukung')
+            ->assertSee('visibility: hidden !important', false)
             ->assertSee('booking-approval-history', false)
             ->assertSee('window.print()', false)
             ->assertDontSee('Ruang Laboratorium (detail_ruangan)');
@@ -102,6 +114,8 @@ class SipLabEndpointsTest extends TestCase
         $this->actingAs($this->staff)->get('/staff/dashboard')->assertOk();
         $this->get('/staff/dashboard')
             ->assertSee('Verifikasi Peminjaman')
+            ->assertSee('Antrean Verifikasi Staf Sarpras')
+            ->assertDontSee('Antrean Verifikasi Tingkat I')
             ->assertSee('Serah Terima')
             ->assertSee('Pengembalian')
             ->assertSee('Manajemen Ruangan')
@@ -114,7 +128,19 @@ class SipLabEndpointsTest extends TestCase
         $this->get('/staff/inventaris')->assertOk();
         $this->get('/staff/ruangan')->assertOk();
         $this->get('/staff/alat')->assertOk();
+        $this->get(route('staff.ruangan.show', $this->room))
+            ->assertOk()
+            ->assertSee('room-detail-list room-info-list', false);
+        $this->get(route('staff.alat.show', $this->asset))
+            ->assertOk()
+            ->assertSee('room-detail-list', false);
         $this->get('/staff/pengguna')->assertOk();
+        $this->get(route('staff.pengguna.index'))
+            ->assertSee('@'.$this->staff->username)
+            ->assertDontSee('{{ $user->username }}');
+        $this->get(route('staff.pengguna.show', $this->staff))
+            ->assertOk()
+            ->assertSee('@'.$this->staff->username);
         $this->get('/staff/riwayat-data')->assertOk();
         $this->get('/profil')->assertOk();
 
@@ -318,7 +344,7 @@ class SipLabEndpointsTest extends TestCase
             'jenis_data' => 'ruangan',
             'kode_identitas' => 'LAB-001',
             'jenis_aksi' => 'ubah',
-            'waktu' => today()->toDateString() . ' 10:00:00',
+            'waktu' => today()->toDateString().' 10:00:00',
         ]);
 
         $this->actingAs($this->staff)
@@ -394,6 +420,87 @@ class SipLabEndpointsTest extends TestCase
         $this->assertSame('Menunggu Pemeriksaan Staf Sarpras', $booking->status);
     }
 
+    public function test_student_can_submit_and_staff_can_approve_an_asset_only_booking(): void
+    {
+        $formResponse = $this->actingAs($this->student)->get(route('booking.create'));
+        $formResponse->assertOk()->assertSee('aria-describedby="roomHelp"', false);
+        $this->assertSame(
+            0,
+            preg_match('/<select\b(?=[^>]*\bid="ruangan_id")(?=[^>]*\brequired(?:\s|=|>))[^>]*>/s', $formResponse->getContent())
+        );
+
+        $this->post('/mahasiswa/peminjaman', $this->bookingPayload([
+            'ruangan_id' => null,
+            'tanggal_pinjam' => today()->addDays(8)->format('Y-m-d'),
+            'jam_mulai' => '14:00',
+            'jam_selesai' => '16:00',
+        ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('student.dashboard'));
+
+        $booking = Peminjaman::latest('id')->firstOrFail();
+        $this->assertSame(0, $booking->detailRuangan()->count());
+        $this->assertSame(1, $booking->detailAlat()->count());
+
+        $this->actingAs($this->staff)
+            ->post(route('staff.verify', $booking), ['status' => 'approved'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Disetujui', $booking->fresh()->status);
+        $this->actingAs($this->student)
+            ->get(route('booking.show', $booking))
+            ->assertOk()
+            ->assertSee('Tanpa peminjaman ruang');
+    }
+
+    public function test_uploaded_and_legacy_local_documents_can_be_opened(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $this->actingAs($this->student)
+            ->post(route('booking.store'), $this->bookingPayload([
+                'document' => UploadedFile::fake()->create('surat.pdf', 10, 'application/pdf'),
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('student.dashboard'));
+
+        $uploadedBooking = Peminjaman::latest('id')->firstOrFail();
+        Storage::disk('public')->assertExists($uploadedBooking->dokumen_pendukung);
+
+        $this->get(route('booking.document', $uploadedBooking))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $legacyBooking = $this->makeBooking();
+        $legacyPath = 'dokumen_peminjaman/legacy-surat.pdf';
+        Storage::disk('local')->put($legacyPath, '%PDF-1.4');
+        $legacyBooking->update(['dokumen_pendukung' => $legacyPath]);
+
+        $this->get(route('booking.document', $legacyBooking))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_damaged_asset_count_is_shown_on_asset_detail_not_in_list(): void
+    {
+        UnitAlat::create([
+            'alat_id' => $this->asset->id,
+            'kode_unit' => 'AST-001-U001',
+            'status' => UnitAlat::STATUS_RUSAK,
+        ]);
+
+        $this->actingAs($this->staff)
+            ->get(route('staff.alat.index'))
+            ->assertOk()
+            ->assertDontSee('unit rusak');
+
+        $this->get(route('staff.alat.show', $this->asset))
+            ->assertOk()
+            ->assertSee('Unit Rusak')
+            ->assertSee('1 unit');
+    }
+
     public function test_staff_approval_is_final_and_cannot_be_repeated(): void
     {
         $booking = $this->makeBooking();
@@ -460,7 +567,7 @@ class SipLabEndpointsTest extends TestCase
         $this->actingAs($this->head)
             ->get('/kepala-lab/approval')
             ->assertNotFound();
-        $this->post('/kepala-lab/approval/' . $booking->id, ['status' => 'approved'])
+        $this->post('/kepala-lab/approval/'.$booking->id, ['status' => 'approved'])
             ->assertNotFound();
     }
 
@@ -481,10 +588,40 @@ class SipLabEndpointsTest extends TestCase
         $this->get('/kepala-lab/approval')->assertNotFound();
     }
 
+    public function test_asset_unit_sync_reuses_existing_units_and_replenishes_damaged_stock(): void
+    {
+        $unit = UnitAlat::create([
+            'alat_id' => $this->asset->id,
+            'kode_unit' => 'AST-001-U001',
+            'status' => UnitAlat::STATUS_TERSEDIA,
+        ]);
+
+        UnitAlat::ensureForAlat($this->asset);
+        $this->assertSame(1, UnitAlat::where('alat_id', $this->asset->id)->count());
+
+        $unit->update(['status' => UnitAlat::STATUS_RUSAK]);
+        UnitAlat::ensureForAlat($this->asset);
+
+        $this->assertSame(2, UnitAlat::where('alat_id', $this->asset->id)->count());
+        $this->assertSame(1, UnitAlat::where('alat_id', $this->asset->id)
+            ->where('status', '!=', UnitAlat::STATUS_RUSAK)
+            ->count());
+        $this->assertDatabaseHas('unit_alat', [
+            'alat_id' => $this->asset->id,
+            'kode_unit' => 'AST-001-01',
+            'status' => UnitAlat::STATUS_TERSEDIA,
+        ]);
+    }
+
     public function test_handover_and_return_record_conditions_damage_logs_and_notifications(): void
     {
         $booking = $this->makeBooking(['status' => 'Disetujui']);
         $detail = $booking->detailAlat()->firstOrFail();
+        $unit = UnitAlat::create([
+            'alat_id' => $this->asset->id,
+            'kode_unit' => 'AST-001-01',
+            'status' => UnitAlat::STATUS_TERSEDIA,
+        ]);
         $this->recordApproval($booking, $this->staff, '1');
 
         $this->actingAs($this->staff)
@@ -494,7 +631,8 @@ class SipLabEndpointsTest extends TestCase
 
         $this->actingAs($this->staff)
             ->post(route('staff.handover.store', $booking), [
-                'conditions' => [$detail->id => 'Baik'],
+                'units' => [$detail->id => [$unit->id]],
+                'unit_conditions' => [$detail->id => [$unit->id => 'Baik']],
                 'notes' => 'Alat diserahkan lengkap.',
             ])
             ->assertSessionHasNoErrors();
@@ -502,10 +640,12 @@ class SipLabEndpointsTest extends TestCase
         $booking->refresh();
         $this->assertSame('Sedang Dipinjam', $booking->status);
         $this->assertDatabaseHas('serah_terima', ['peminjaman_id' => $booking->id]);
-        $this->assertSame('Baik', $detail->fresh()->kondisi_awal);
+        $this->assertSame('AST-001-01: Baik', $detail->fresh()->kondisi_awal);
+        $this->assertSame(UnitAlat::STATUS_DIPINJAM, $unit->fresh()->status);
 
         $this->post(route('staff.handover.store', $booking), [
-            'conditions' => [$detail->id => 'Baik'],
+            'units' => [$detail->id => [$unit->id]],
+            'unit_conditions' => [$detail->id => [$unit->id => 'Baik']],
         ])->assertStatus(409);
 
         $this->get(route('staff.returns.create', $booking))
@@ -513,13 +653,21 @@ class SipLabEndpointsTest extends TestCase
             ->assertSee('Pemeriksaan alat');
 
         $this->post(route('staff.returns.store', $booking), [
-            'conditions' => [$detail->id => 'Rusak ringan'],
-            'damage_descriptions' => [$detail->id => 'Kabel daya longgar.'],
+            'unit_conditions' => [$detail->id => [$unit->id => 'Rusak ringan']],
+            'unit_damaged' => [$detail->id => [$unit->id => '1']],
+            'unit_damage_descriptions' => [$detail->id => [$unit->id => 'Kabel daya longgar.']],
         ])->assertSessionHasNoErrors();
 
         $this->assertSame('Selesai', $booking->fresh()->status);
-        $this->assertNotNull($detail->fresh()->kondisi_akhir);
+        $this->assertSame('AST-001-01: Rusak ringan', $detail->fresh()->kondisi_akhir);
+        $this->assertSame(UnitAlat::STATUS_RUSAK, $unit->fresh()->status);
+        $this->assertSame(0, $this->asset->fresh()->jumlah_total);
         $this->assertDatabaseHas('pengembalian', ['peminjaman_id' => $booking->id]);
+        $this->assertDatabaseHas('kerusakan_alat', [
+            'detail_alat_id' => $detail->id,
+            'unit_alat_id' => $unit->id,
+            'deskripsi' => 'Kabel daya longgar.',
+        ]);
         $this->assertSame(1, KerusakanAlat::where('detail_alat_id', $detail->id)->count());
         $this->assertSame(0, \App\Models\Sanksi::whereHas('pengembalian', fn ($query) => $query->where('peminjaman_id', $booking->id))->count());
         $this->assertSame(2, Notifikasi::where('peminjaman_id', $booking->id)->count());
@@ -559,8 +707,9 @@ class SipLabEndpointsTest extends TestCase
         $counter++;
 
         return User::create([
-            'nama' => 'Pengguna ' . $counter,
-            'name' => 'Pengguna ' . $counter,
+            'nama' => 'Pengguna '.$counter,
+            'name' => 'Pengguna '.$counter,
+            'username' => $role.$counter,
             'email' => $email,
             'password' => Hash::make('password'),
             'role' => $role,
@@ -584,7 +733,7 @@ class SipLabEndpointsTest extends TestCase
     private function makeBooking(array $overrides = []): Peminjaman
     {
         $booking = Peminjaman::create(array_merge([
-            'kode_peminjaman' => 'TEST-' . uniqid(),
+            'kode_peminjaman' => 'TEST-'.uniqid(),
             'user_id' => $this->student->id,
             'tanggal_pinjam' => today()->addDays(3)->format('Y-m-d'),
             'jam_mulai' => '10:00:00',

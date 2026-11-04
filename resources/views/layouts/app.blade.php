@@ -639,6 +639,30 @@
             display: none;
         }
 
+        .room-detail-list > dt,
+        .room-detail-list > dd {
+            display: flex;
+            align-items: center;
+            min-height: 42px;
+            margin-bottom: 0;
+            box-sizing: border-box;
+        }
+
+        .room-detail-list > dt {
+            padding-right: .75rem;
+        }
+
+        .room-detail-list > dd {
+            padding-left: .75rem;
+            overflow-wrap: anywhere;
+        }
+
+        .room-info-list > dt:nth-of-type(4),
+        .room-info-list > dd:nth-of-type(4) {
+            align-items: flex-start;
+            padding-top: .5rem !important;
+        }
+
         @media (max-width: 991.98px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -671,6 +695,7 @@
             }
         }
     </style>
+    @stack('styles')
 </head>
 <body>
 

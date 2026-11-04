@@ -45,7 +45,7 @@
                     <tr>
                         <td>
                             <div class="fw-bold text-dark">{{ $user->nama ?? $user->name }}</div>
-                            <small class="text-muted">@{{ $user->username }}</small>
+                            <small class="text-muted">{{ '@' . ($user->username ?: '-') }}</small>
                         </td>
                         <td><small class="text-muted">{{ $user->email }}</small></td>
                         <td><small class="text-muted">{{ $user->nim ?? '-' }}</small></td>
@@ -89,4 +89,3 @@
     @endif
 </div>
 @endsection
-

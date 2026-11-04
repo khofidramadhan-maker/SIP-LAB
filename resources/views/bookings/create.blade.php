@@ -76,12 +76,11 @@
                             <div class="col-12">
                                 <label for="ruangan_id" class="form-label">
                                     Ruang Laboratorium
-                                    <span class="text-danger">*</span>
                                 </label>
 
                                 <select id="ruangan_id" name="ruangan_id"
                                         class="form-select @error('ruangan_id') is-invalid @enderror"
-                                        required>
+                                        aria-describedby="roomHelp">
                                     <option value="">Pilih ruang laboratorium</option>
 
                                     @foreach($rooms as $room)
@@ -99,15 +98,9 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
 
-                                @if($rooms->isEmpty())
-                                    <small class="form-help text-danger">
-                                        Belum ada ruang laboratorium yang terdaftar.
-                                    </small>
-                                @else
-                                    <small class="form-help">
-                                        Pilih ruangan sesuai kebutuhan kegiatan.
-                                    </small>
-                                @endif
+                                <small id="roomHelp" class="form-help">
+                                    Pilih ruang jika kegiatan membutuhkannya; pengajuan dapat diajukan tanpa ruang dengan memilih alat.
+                                </small>
                             </div>
                         </div>
                     </section>
@@ -215,7 +208,6 @@
                             <div class="col-12 col-md-8">
                                 <label for="alat_id" class="form-label">
                                     Peralatan Tambahan
-                                    <span class="optional-label">(Opsional)</span>
                                 </label>
 
                                 <select id="alat_id" name="alat_id"

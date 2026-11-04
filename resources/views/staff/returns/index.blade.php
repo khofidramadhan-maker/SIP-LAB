@@ -36,7 +36,7 @@
                             <small class="text-muted">{{ $booking->user->nama ?? $booking->user->name }}</small>
                         </td>
                         <td>
-                            <div>{{ $room?->nama_ruangan ?? 'Ruang tidak terdata' }}</div>
+                            <div>{{ $room?->nama_ruangan ?? 'Tanpa ruang' }}</div>
                             <small class="text-muted">
                                 {{ $booking->detailAlat->pluck('alat.nama_alat')->filter()->join(', ') ?: 'Tanpa alat tambahan' }}
                                 <small class="text-muted d-block">Kode Alat: {{ $booking->detailAlat->pluck('alat.kode_inventaris')->filter()->join(', ') ?: '-' }}</small>

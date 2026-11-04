@@ -16,7 +16,7 @@ class BookingAvailability
     ];
 
     public function lockAndAssertAvailable(
-        int $roomId,
+        ?int $roomId,
         string $date,
         string $start,
         string $end,
@@ -24,26 +24,29 @@ class BookingAvailability
         int $assetQuantity = 0,
         ?int $exceptBookingId = null
     ): array {
-        $room = Ruangan::query()->whereKey($roomId)->lockForUpdate()->firstOrFail();
+        $room = null;
+        if ($roomId !== null) {
+            $room = Ruangan::query()->whereKey($roomId)->lockForUpdate()->firstOrFail();
 
-        if ($room->status !== 'tersedia') {
-            throw ValidationException::withMessages([
-                'ruangan_id' => 'Ruang laboratorium sedang tidak tersedia.',
-            ]);
-        }
+            if ($room->status !== 'tersedia') {
+                throw ValidationException::withMessages([
+                    'ruangan_id' => 'Ruang laboratorium sedang tidak tersedia.',
+                ]);
+            }
 
-        $roomConflict = $room->peminjaman()
-            ->whereDate('tanggal_pinjam', $date)
-            ->whereIn('status', self::ACTIVE_STATUSES)
-            ->where('jam_mulai', '<', $end)
-            ->where('jam_selesai', '>', $start)
-            ->when($exceptBookingId, fn ($query) => $query->whereKeyNot($exceptBookingId))
-            ->exists();
+            $roomConflict = $room->peminjaman()
+                ->whereDate('tanggal_pinjam', $date)
+                ->whereIn('status', self::ACTIVE_STATUSES)
+                ->where('jam_mulai', '<', $end)
+                ->where('jam_selesai', '>', $start)
+                ->when($exceptBookingId, fn ($query) => $query->whereKeyNot($exceptBookingId))
+                ->exists();
 
-        if ($roomConflict) {
-            throw ValidationException::withMessages([
-                'ruangan_id' => 'Ruangan sudah memiliki peminjaman pada rentang waktu tersebut.',
-            ]);
+            if ($roomConflict) {
+                throw ValidationException::withMessages([
+                    'ruangan_id' => 'Ruangan sudah memiliki peminjaman pada rentang waktu tersebut.',
+                ]);
+            }
         }
 
         $asset = null;

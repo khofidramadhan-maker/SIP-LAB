@@ -239,9 +239,9 @@
             </div>
 
             {{-- Day headers --}}
-            <div class="row g-0 text-center mb-1" style="border-bottom:1px solid #e2e8f0; padding-bottom:4px;">
-                @foreach(['Mi','Se','Se','Ra','Ka','Ju','Sa'] as $d)
-                    <div class="col" style="font-size:.65rem; font-weight:700; color:#94a3b8;">{{ $d }}</div>
+            <div class="cal-weekdays mb-1">
+                @foreach(['Min','Sen','Sel','Rab','Kam','Jum','Sab'] as $d)
+                    <div>{{ $d }}</div>
                 @endforeach
             </div>
 
@@ -378,6 +378,87 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+    .cal-weekdays,
+    #cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+    }
+
+    .cal-weekdays {
+        padding-bottom: 6px;
+        border-bottom: 1px solid #e2e8f0;
+        color: #94a3b8;
+        font-size: .65rem;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .cal-day-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1;
+        min-width: 0;
+    }
+
+    .cal-day {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: 36px;
+        aspect-ratio: 1;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #334155;
+        font-size: .82rem;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        transition: background .15s, color .15s;
+    }
+
+    .cal-day:hover,
+    .cal-day:focus-visible {
+        background: #f1f5f9;
+        outline: none;
+    }
+
+    .cal-day-today {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+
+    .cal-day-selected,
+    .cal-day-selected:hover,
+    .cal-day-selected:focus-visible {
+        background: #3b82f6;
+        color: #fff;
+    }
+
+    .cal-day-dot {
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #3b82f6;
+        transform: translateX(-50%);
+    }
+
+    .cal-day-selected .cal-day-dot {
+        background: #fff;
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
 (function () {
@@ -443,11 +524,11 @@
         const today     = new Date();
         const todayStr  = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
-        let html = '<div class="row g-1">';
+        let html = '';
 
         // Leading empty cells
         for (let i = 0; i < firstDay; i++) {
-            html += '<div class="col"></div>';
+            html += '<div class="cal-day-cell" aria-hidden="true"></div>';
         }
 
         for (let d = 1; d <= daysInMon; d++) {
@@ -456,31 +537,19 @@
             const isToday     = dateStr === todayStr;
             const isSelected  = dateStr === selectedDate;
 
-            let dayClass  = 'cal-day';
-            if (isToday)    dayClass += ' cal-day-today';
+            let dayClass = 'cal-day';
+            if (isToday) dayClass += ' cal-day-today';
             if (isSelected) dayClass += ' cal-day-selected';
 
-            html += `<div class="col d-flex justify-content-center mb-1">
-                <button class="${dayClass}" data-date="${dateStr}"
-                    style="width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
-                           font-size:.82rem;font-weight:600;position:relative;
-                           background:${isSelected ? '#3b82f6' : (isToday ? '#eff6ff' : 'transparent')};
-                           color:${isSelected ? '#fff' : (isToday ? '#3b82f6' : '#334155')};
-                           transition:background .15s;">
+            html += `<div class="cal-day-cell">
+                <button type="button" class="${dayClass}" data-date="${dateStr}"
+                    aria-label="${dateStr}" aria-pressed="${isSelected}">
                     ${d}
-                    ${hasSchedule ? `<span style="position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
-                        width:5px;height:5px;border-radius:50%;
-                        background:${isSelected ? '#fff' : '#3b82f6'};"></span>` : ''}
+                    ${hasSchedule ? '<span class="cal-day-dot" aria-hidden="true"></span>' : ''}
                 </button>
             </div>`;
-
-            // Break row every 7 days
-            if ((firstDay + d) % 7 === 0) {
-                html += '</div><div class="row g-1">';
-            }
         }
 
-        html += '</div>';
         grid.innerHTML = html;
 
         // Attach click listeners

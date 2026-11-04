@@ -33,7 +33,7 @@ class BookingController extends Controller
             'end' => ['nullable', 'date_format:H:i'],
         ]);
 
-        if (!empty($filters['start']) && !empty($filters['end']) && $filters['end'] <= $filters['start']) {
+        if (! empty($filters['start']) && ! empty($filters['end']) && $filters['end'] <= $filters['start']) {
             return back()->withErrors([
                 'end' => 'Jam selesai harus lebih akhir daripada jam mulai.',
             ])->withInput();
@@ -41,7 +41,7 @@ class BookingController extends Controller
 
         $roomsQuery = Ruangan::query()->where('status', 'tersedia');
 
-        if (!empty($filters['date']) && !empty($filters['start']) && !empty($filters['end'])) {
+        if (! empty($filters['date']) && ! empty($filters['start']) && ! empty($filters['end'])) {
             $roomsQuery->whereDoesntHave('peminjaman', function ($query) use ($filters) {
                 $query->whereDate('tanggal_pinjam', $filters['date'])
                     ->whereIn('status', BookingAvailability::ACTIVE_STATUSES)
@@ -60,21 +60,22 @@ class BookingController extends Controller
     {
         $validated = $request->validate([
             'keperluan' => ['required', 'string', 'max:2000'],
-            'ruangan_id' => ['required', 'integer', 'exists:ruangan,id'],
+            'ruangan_id' => ['nullable', 'required_without:alat_id', 'integer', 'exists:ruangan,id'],
             'tanggal_pinjam' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'jam_mulai' => ['required', 'date_format:H:i'],
             'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
-            'alat_id' => ['nullable', 'integer', 'exists:alat,id'],
+            'alat_id' => ['nullable', 'required_without:ruangan_id', 'integer', 'exists:alat,id'],
             'jumlah_alat' => ['nullable', 'integer', 'min:1'],
             'document' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
         ]);
 
-        $assetId = !empty($validated['alat_id']) ? (int) $validated['alat_id'] : null;
+        $roomId = ! empty($validated['ruangan_id']) ? (int) $validated['ruangan_id'] : null;
+        $assetId = ! empty($validated['alat_id']) ? (int) $validated['alat_id'] : null;
         $assetQuantity = $assetId === null ? 0 : (int) ($validated['jumlah_alat'] ?? 1);
 
-        $booking = DB::transaction(function () use ($request, $validated, $availability, $assetId, $assetQuantity) {
+        $booking = DB::transaction(function () use ($request, $validated, $availability, $roomId, $assetId, $assetQuantity) {
             $availability->lockAndAssertAvailable(
-                (int) $validated['ruangan_id'],
+                $roomId,
                 $validated['tanggal_pinjam'],
                 $validated['jam_mulai'],
                 $validated['jam_selesai'],
@@ -86,7 +87,7 @@ class BookingController extends Controller
                 ? $request->file('document')->store('dokumen_peminjaman', 'public')
                 : null;
 
-            $code = 'PINJAM-' . now()->format('Ymd-His') . '-' . Str::upper(Str::random(6));
+            $code = 'PINJAM-'.now()->format('Ymd-His').'-'.Str::upper(Str::random(6));
 
             $booking = Peminjaman::create([
                 'kode_peminjaman' => $code,
@@ -99,10 +100,12 @@ class BookingController extends Controller
                 'status' => 'Menunggu Pemeriksaan Staf Sarpras',
             ]);
 
-            DetailRuangan::create([
-                'peminjaman_id' => $booking->id,
-                'ruangan_id' => $validated['ruangan_id'],
-            ]);
+            if ($roomId !== null) {
+                DetailRuangan::create([
+                    'peminjaman_id' => $booking->id,
+                    'ruangan_id' => $roomId,
+                ]);
+            }
 
             if ($assetId !== null) {
                 DetailAlat::create([
@@ -174,21 +177,41 @@ class BookingController extends Controller
             abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
         }
 
-        if (!in_array($user->role, ['mahasiswa', 'staff', 'kepala_lab'], true)) {
+        if (! in_array($user->role, ['mahasiswa', 'staff', 'kepala_lab'], true)) {
             abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
         }
 
-        if (!$booking->dokumen_pendukung
-            || !Storage::disk('public')->exists($booking->dokumen_pendukung)) {
+        if (! $booking->dokumen_pendukung) {
             abort(404, 'Dokumen pendukung tidak ditemukan. File mungkin belum terunggah atau sudah dihapus dari penyimpanan.');
         }
 
-        return response()->file(
-            Storage::disk('public')->path($booking->dokumen_pendukung),
-            [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($booking->dokumen_pendukung) . '"',
-            ]
-        );
+        $storedPath = str_replace('\\', '/', $booking->dokumen_pendukung);
+        foreach (['storage/app/public/', 'storage/app/', 'public/', 'storage/'] as $prefix) {
+            $prefixPosition = strpos($storedPath, $prefix);
+            if ($prefixPosition !== false) {
+                $storedPath = substr($storedPath, $prefixPosition + strlen($prefix));
+                break;
+            }
+        }
+        $storedPath = ltrim($storedPath, '/');
+
+        if ($storedPath === '' || in_array('..', explode('/', $storedPath), true)) {
+            abort(404, 'Lokasi dokumen pendukung tidak valid.');
+        }
+
+        foreach (['public', 'local'] as $diskName) {
+            $disk = Storage::disk($diskName);
+            if ($disk->exists($storedPath)) {
+                return response()->file(
+                    $disk->path($storedPath),
+                    [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'inline; filename="'.basename($storedPath).'"',
+                    ]
+                );
+            }
+        }
+
+        abort(404, 'Dokumen pendukung tidak ditemukan. File mungkin belum terunggah atau sudah dihapus dari penyimpanan.');
     }
 }

@@ -79,7 +79,7 @@
                             <small class="text-muted">Diajukan: {{ $booking->created_at->format('d M Y') }}</small>
                         </td>
                         <td>
-                            <div class="fw-semibold text-dark">{{ $ruangan?->nama_ruangan ?? 'Ruang Khusus' }}</div>
+                            <div class="fw-semibold text-dark">{{ $ruangan?->nama_ruangan ?? 'Tanpa ruang' }}</div>
                             <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ $ruangan?->lokasi ?? '-' }}</small>
                         </td>
                         <td>

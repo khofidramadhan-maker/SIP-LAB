@@ -10,7 +10,9 @@ class UnitAlat extends Model
     use HasFactory;
 
     public const STATUS_TERSEDIA = 'tersedia';
+
     public const STATUS_DIPINJAM = 'dipinjam';
+
     public const STATUS_RUSAK = 'rusak';
 
     protected $table = 'unit_alat';
@@ -43,7 +45,7 @@ class UnitAlat extends Model
 
     public static function codeFor(Alat $alat, int $number): string
     {
-        return $alat->kode_inventaris . '-' . str_pad((string) $number, 2, '0', STR_PAD_LEFT);
+        return $alat->kode_inventaris.'-'.str_pad((string) $number, 2, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -54,11 +56,21 @@ class UnitAlat extends Model
      */
     public static function ensureForAlat(Alat $alat): void
     {
-        for ($i = 1; $i <= (int) $alat->jumlah_total; $i++) {
-            static::firstOrCreate(
-                ['kode_unit' => static::codeFor($alat, $i)],
-                ['alat_id' => $alat->id, 'status' => static::STATUS_TERSEDIA]
+        $usableCount = static::query()
+            ->where('alat_id', $alat->id)
+            ->where('status', '!=', self::STATUS_RUSAK)
+            ->count();
+        $number = 1;
+
+        while ($usableCount < (int) $alat->jumlah_total) {
+            $unit = static::firstOrCreate(
+                ['kode_unit' => static::codeFor($alat, $number++)],
+                ['alat_id' => $alat->id, 'status' => self::STATUS_TERSEDIA]
             );
+
+            if ((int) $unit->alat_id === (int) $alat->id && $unit->status !== self::STATUS_RUSAK) {
+                $usableCount++;
+            }
         }
     }
 }

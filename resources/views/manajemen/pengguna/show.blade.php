@@ -27,7 +27,7 @@
                 </div>
                 <div>
                     <div class="fw-bold text-dark">{{ $user->nama ?? $user->name }}</div>
-                    <small class="text-muted">@{{ $user->username }}</small>
+                    <small class="text-muted">{{ '@' . ($user->username ?: '-') }}</small>
                 </div>
             </div>
 
@@ -111,4 +111,3 @@
     </div>
 </div>
 @endsection
-

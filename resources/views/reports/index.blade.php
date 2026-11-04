@@ -665,7 +665,7 @@
 
                             <td>
                                 <div class="primary-info">
-                                    {{ $ruang?->nama_ruangan ?? 'Ruang Khusus' }}
+                                    {{ $ruang?->nama_ruangan ?? 'Tanpa ruang' }}
                                 </div>
                                 <div class="secondary-info">
                                     <i class="bi bi-geo-alt me-1"></i>

@@ -158,7 +158,7 @@
                 <div class="stat-card-icon stat-icon-emerald mb-3" style="width: 52px; height: 52px; font-size: 1.5rem;">
                     <i class="bi bi-shield-check"></i>
                 </div>
-                <h5 class="fw-bold text-dark mb-2">Verifikasi 2 Tingkat</h5>
+                <h5 class="fw-bold text-dark mb-2">Verifikasi oleh Staf Sarpras</h5>
                 <p class="text-muted small mb-0" style="line-height: 1.6;">
                     Alur peminjaman resmi dengan pemeriksaan dan keputusan langsung oleh Staf Sarpras Laboratorium.
                 </p>

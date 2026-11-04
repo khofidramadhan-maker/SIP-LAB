@@ -26,7 +26,7 @@
                 <span class="badge bg-light text-muted border small">{{ $ruangan->kode_ruangan }}</span>
             </div>
 
-            <dl class="row g-0 small">
+            <dl class="row g-0 small room-detail-list room-info-list">
                 <dt class="col-5 text-muted fw-semibold py-2 border-bottom">Lokasi</dt>
                 <dd class="col-7 py-2 border-bottom text-dark">{{ $ruangan->lokasi }}</dd>
 
@@ -100,4 +100,3 @@
     </div>
 </div>
 @endsection
-

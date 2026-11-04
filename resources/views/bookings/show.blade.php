@@ -6,90 +6,232 @@
 
 @section('content')
 <style>
-    .booking-proof-print-header {
-        display: none;
-    }
-
-    .booking-document-print {
+    .booking-proof-print {
         display: none;
     }
 
     @media print {
         @page {
             size: A4;
-            margin: 16mm;
+            margin: 14mm;
         }
 
-        body {
-            background: #fff !important;
-            color: #111827 !important;
+        body * {
+            visibility: hidden !important;
         }
 
-        .sidebar,
-        .sidebar-backdrop,
-        .topbar-header,
-        .booking-no-print,
-        .booking-approval-history {
-            display: none !important;
+        .booking-proof-print,
+        .booking-proof-print * {
+            visibility: visible !important;
         }
 
-        .app-wrapper,
-        .main-wrapper,
-        .page-content,
-        .booking-detail-layout {
+        .booking-proof-print {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
             display: block !important;
             width: 100% !important;
-            min-height: 0 !important;
-            margin: 0 !important;
             padding: 0 !important;
+            background: #fff !important;
+            color: #111827 !important;
+            font: 10pt/1.45 Arial, sans-serif !important;
         }
 
-        .booking-proof-column {
-            width: 100% !important;
-        }
-
-        .booking-proof-card {
-            margin: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
-            box-shadow: none !important;
+        .booking-proof-print * {
+            box-sizing: border-box !important;
         }
 
         .booking-proof-print-header {
-            display: block !important;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
             border-bottom: 2px solid #1e293b;
         }
 
-        .booking-proof-card .bg-light-subtle {
-            background: #fff !important;
+        .booking-proof-brand {
+            font-size: 19pt;
+            font-weight: 700;
+            letter-spacing: .04em;
         }
 
-        .booking-proof-card .border {
-            border-color: #cbd5e1 !important;
+        .booking-proof-title {
+            margin: 2px 0 0;
+            color: #475569;
+            font-size: 10pt;
         }
 
-        .booking-document-link {
-            display: none !important;
+        .booking-proof-code {
+            text-align: right;
+            font-size: 9pt;
+            color: #475569;
         }
 
-        .booking-document-print {
-            display: block !important;
+        .booking-proof-code strong {
+            display: block;
+            color: #111827;
+            font-size: 11pt;
+        }
+
+        .booking-proof-status {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 3px 8px;
+            border: 1px solid #94a3b8;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        .booking-proof-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px 18px;
+        }
+
+        .booking-proof-field {
+            min-width: 0;
+            padding: 7px 0;
+            border-bottom: 1px solid #cbd5e1;
+            break-inside: avoid;
+        }
+
+        .booking-proof-field-wide {
+            grid-column: 1 / -1;
+        }
+
+        .booking-proof-label {
+            display: block;
+            margin-bottom: 3px;
+            color: #64748b;
+            font-size: 8pt;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+
+        .booking-proof-value {
+            overflow-wrap: anywhere;
+            color: #111827;
+        }
+
+        .booking-proof-equipment {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .booking-proof-equipment li {
+            margin: 0 0 3px;
+            break-inside: avoid;
+        }
+
+        .booking-proof-footer {
+            margin-top: 18px;
+            color: #64748b;
+            font-size: 8pt;
+            text-align: right;
         }
     }
 </style>
+
+@php
+    $ruang = $booking->detailRuangan->first()?->ruangan;
+    $latestApproval = $booking->persetujuan->sortByDesc('tanggal')->first();
+@endphp
+
+<section class="booking-proof-print" aria-label="Bukti peminjaman untuk dicetak">
+    <header class="booking-proof-print-header">
+        <div>
+            <div class="booking-proof-brand">SIP-LAB</div>
+            <div class="booking-proof-title">Bukti Pengajuan Peminjaman Laboratorium</div>
+        </div>
+        <div class="booking-proof-code">
+            Kode Peminjaman
+            <strong>{{ $booking->kode_peminjaman }}</strong>
+            <span class="booking-proof-status">{{ $booking->status }}</span>
+        </div>
+    </header>
+
+    <div class="booking-proof-grid">
+        <div class="booking-proof-field">
+            <span class="booking-proof-label">Pemohon</span>
+            <div class="booking-proof-value">{{ $booking->user->nama ?? $booking->user->name }}</div>
+        </div>
+        <div class="booking-proof-field">
+            <span class="booking-proof-label">NIM / NIP</span>
+            <div class="booking-proof-value">{{ $booking->user->nim ?? '-' }}</div>
+        </div>
+        @if($booking->user->program_study)
+            <div class="booking-proof-field booking-proof-field-wide">
+                <span class="booking-proof-label">Program Studi</span>
+                <div class="booking-proof-value">{{ $booking->user->program_study }}</div>
+            </div>
+        @endif
+        <div class="booking-proof-field">
+            <span class="booking-proof-label">Tanggal Pelaksanaan</span>
+            <div class="booking-proof-value">{{ \Carbon\Carbon::parse($booking->tanggal_pinjam)->translatedFormat('d F Y') }}</div>
+        </div>
+        <div class="booking-proof-field">
+            <span class="booking-proof-label">Waktu</span>
+            <div class="booking-proof-value">{{ substr($booking->jam_mulai, 0, 5) }}–{{ substr($booking->jam_selesai, 0, 5) }} WIB</div>
+        </div>
+        <div class="booking-proof-field booking-proof-field-wide">
+            <span class="booking-proof-label">Ruang Laboratorium</span>
+            <div class="booking-proof-value">
+                @if($ruang)
+                    {{ $ruang->nama_ruangan }} ({{ $ruang->kode_ruangan }}) — {{ $ruang->lokasi }}
+                @else
+                    Tanpa peminjaman ruang
+                @endif
+            </div>
+        </div>
+        <div class="booking-proof-field booking-proof-field-wide">
+            <span class="booking-proof-label">Keperluan</span>
+            <div class="booking-proof-value">{{ $booking->keperluan }}</div>
+        </div>
+        <div class="booking-proof-field booking-proof-field-wide">
+            <span class="booking-proof-label">Peralatan</span>
+            @if($booking->detailAlat->isNotEmpty())
+                <ul class="booking-proof-equipment">
+                    @foreach($booking->detailAlat as $item)
+                        <li>
+                            {{ $item->alat?->nama_alat ?? 'Alat' }}
+                            ({{ $item->alat?->kode_inventaris ?? '-' }}) — {{ $item->jumlah }} unit
+                            @if($item->detailAlatUnits->isNotEmpty())
+                                <span> | Kode barang: {{ $item->detailAlatUnits->map(fn ($row) => $row->unitAlat?->kode_unit)->filter()->join(', ') }}</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <div class="booking-proof-value">Tidak ada peralatan tambahan.</div>
+            @endif
+        </div>
+        <div class="booking-proof-field">
+            <span class="booking-proof-label">Dokumen Pendukung</span>
+            <div class="booking-proof-value">{{ $booking->dokumen_pendukung ? 'Terlampir' : 'Tidak ada' }}</div>
+        </div>
+        @if($latestApproval)
+            <div class="booking-proof-field">
+                <span class="booking-proof-label">Keputusan Terakhir</span>
+                <div class="booking-proof-value">
+                    {{ ucfirst($latestApproval->keputusan) }}
+                    — {{ $latestApproval->user?->nama ?? $latestApproval->user?->name ?? 'Petugas' }}
+                </div>
+            </div>
+        @endif
+    </div>
+
+    <footer class="booking-proof-footer">
+        Dicetak {{ now()->translatedFormat('d F Y, H:i') }} WIB
+    </footer>
+</section>
 
 <div class="row g-4 booking-detail-layout">
     <!-- Main Detail Info -->
     <div class="col-lg-8 booking-proof-column">
         <div class="card-custom p-4 p-md-5 mb-4 booking-proof-card">
-            <div class="booking-proof-print-header">
-                <div class="fw-bold fs-4 text-dark">SIP-LAB</div>
-                <div class="text-muted">Bukti Pengajuan Peminjaman Laboratorium</div>
-                <div class="small text-muted mt-2">Dicetak pada {{ now()->translatedFormat('d F Y, H:i') }} WIB</div>
-            </div>
-
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 pb-3 mb-4 border-bottom">
                 <div>
                     <span class="badge bg-light text-muted border px-2 py-1 rounded-pill small mb-2">
@@ -128,8 +270,7 @@
                 <div class="col-md-6">
                     <div class="p-3 rounded-3 bg-light-subtle border" style="border-color: #e2e8f0 !important;">
                         <small class="text-muted text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.05em;">Ruang Laboratorium</small>
-                        @php $ruang = $booking->detailRuangan->first()?->ruangan; @endphp
-                        <div class="fw-bold text-dark fs-6 mt-1">{{ $ruang?->nama_ruangan ?? 'Ruang Tidak Terdata' }}</div>
+                        <div class="fw-bold text-dark fs-6 mt-1">{{ $ruang?->nama_ruangan ?? 'Tanpa peminjaman ruang' }}</div>
                         <div class="text-muted small">
                             <i class="bi bi-geo-alt text-primary me-1"></i>{{ $ruang?->lokasi ?? '-' }} &bull; Kode: {{ $ruang?->kode_ruangan ?? '-' }}
                         </div>
@@ -196,10 +337,6 @@
                                 <a href="{{ route('booking.document', $booking) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 booking-document-link">
                                     <i class="bi bi-file-earmark-pdf"></i> Lihat Dokumen Pendukung
                                 </a>
-                                <div class="booking-document-print small text-dark mt-2">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i>
-                                    Terlampir: {{ basename($booking->dokumen_pendukung) }}
-                                </div>
                             </div>
                         @else
                             <div class="text-muted small mt-1">Tidak ada lampiran dokumen PDF.</div>

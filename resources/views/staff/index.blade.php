@@ -50,7 +50,7 @@
                         <td>
                             <span class="badge bg-light text-muted border px-2 py-0 rounded-pill small mb-1">{{ $booking->kode_peminjaman }}</span>
                             <div class="fw-semibold text-dark">{{ Str::limit($booking->keperluan, 40) }}</div>
-                            <small class="text-primary"><i class="bi bi-buildings me-1"></i>{{ $ruang?->nama_ruangan ?? 'Ruang Khusus' }}</small>
+                            <small class="text-primary"><i class="bi bi-buildings me-1"></i>{{ $ruang?->nama_ruangan ?? 'Tanpa ruang' }}</small>
                         </td>
                         <td>
                             @if($booking->detailAlat->count() > 0)
@@ -76,7 +76,7 @@
                         </td>
                         <td>
                             @if($booking->dokumen_pendukung)
-                                <a href="{{ route('booking.document', $booking) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="font-size:0.75rem;">
+                                <a href="{{ route('booking.document', $booking) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="font-size:0.75rem;">
                                     <i class="bi bi-file-earmark-pdf"></i> PDF
                                 </a>
                             @else

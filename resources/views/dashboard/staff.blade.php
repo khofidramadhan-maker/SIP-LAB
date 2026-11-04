@@ -80,7 +80,7 @@
 <div class="card-custom p-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
-            <h5 class="fw-bold text-dark mb-1">Antrean Verifikasi Tingkat I</h5>
+            <h5 class="fw-bold text-dark mb-1">Antrean Verifikasi Staf Sarpras</h5>
             <p class="text-muted small mb-0">Periksa kelengkapan jadwal, kapasitas ruangan, dan dokumen pendukung mahasiswa</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
@@ -129,7 +129,7 @@
                         <td>
                             <span class="badge bg-light text-muted border px-2 py-0 rounded-pill small mb-1">{{ $booking->kode_peminjaman }}</span>
                             <div class="fw-semibold text-dark">{{ Str::limit($booking->keperluan, 45) }}</div>
-                            <small class="text-muted"><i class="bi bi-buildings text-primary me-1"></i>{{ $ruang?->nama_ruangan ?? 'Ruang Khusus' }}</small>
+                            <small class="text-muted"><i class="bi bi-buildings text-primary me-1"></i>{{ $ruang?->nama_ruangan ?? 'Tanpa ruang' }}</small>
                         </td>
                         <td>
                             <div class="fw-semibold text-dark">{{ date('d M Y', strtotime($booking->tanggal_pinjam)) }}</div>
@@ -142,7 +142,7 @@
                         </td>
                         <td>
                             @if($booking->dokumen_pendukung)
-                                <a href="{{ route('booking.document', $booking) }}" target="_blank" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none px-2 py-1 rounded-pill">
+                                <a href="{{ route('booking.document', $booking) }}" target="_blank" rel="noopener" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none px-2 py-1 rounded-pill">
                                     <i class="bi bi-file-pdf"></i> Lihat PDF
                                 </a>
                             @else

@@ -23,12 +23,15 @@
                 <span class="badge bg-light text-muted border small">{{ $alat->kode_inventaris }}</span>
             </div>
 
-            <dl class="row g-0 small">
+            <dl class="row g-0 small room-detail-list">
                 <dt class="col-5 text-muted fw-semibold py-2 border-bottom">Kategori</dt>
                 <dd class="col-7 py-2 border-bottom text-dark">{{ $alat->kategori }}</dd>
 
                 <dt class="col-5 text-muted fw-semibold py-2 border-bottom">Jumlah Total</dt>
                 <dd class="col-7 py-2 border-bottom text-dark">{{ $alat->jumlah_total }} unit</dd>
+
+                <dt class="col-5 text-muted fw-semibold py-2 border-bottom">Unit Rusak</dt>
+                <dd class="col-7 py-2 border-bottom {{ $rusakCount > 0 ? 'text-danger' : 'text-dark' }}">{{ $rusakCount }} unit</dd>
 
                 <dt class="col-5 text-muted fw-semibold py-2 border-bottom">Kondisi</dt>
                 <dd class="col-7 py-2 border-bottom">
@@ -131,4 +134,3 @@
     </div>
 </div>
 @endsection
-

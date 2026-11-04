@@ -6,8 +6,8 @@ use App\Models\DetailAlatUnit;
 use App\Models\KerusakanAlat;
 use App\Models\LogAktivitas;
 use App\Models\Notifikasi;
-use App\Models\Pengembalian;
 use App\Models\Peminjaman;
+use App\Models\Pengembalian;
 use App\Models\Persetujuan;
 use App\Models\SerahTerima;
 use App\Models\UnitAlat;
@@ -40,7 +40,7 @@ class StaffController extends Controller
         DB::transaction(function () use ($booking, $validated, $availability) {
             $booking = Peminjaman::query()->lockForUpdate()->findOrFail($booking->id);
 
-            if (!in_array($booking->status, ['Menunggu Pemeriksaan Staf Sarpras', 'Menunggu Verifikasi'], true)) {
+            if (! in_array($booking->status, ['Menunggu Pemeriksaan Staf Sarpras', 'Menunggu Verifikasi'], true)) {
                 throw ValidationException::withMessages([
                     'status' => 'Pengajuan ini sudah diproses atau tidak lagi menunggu pemeriksaan staf.',
                 ]);
@@ -50,13 +50,13 @@ class StaffController extends Controller
 
             if ($isApproved) {
                 $roomId = $booking->detailRuangan()->value('ruangan_id');
-                if (!$roomId) {
+                $details = $booking->detailAlat()->orderBy('alat_id')->get();
+                if (! $roomId && $details->isEmpty()) {
                     throw ValidationException::withMessages([
-                        'ruangan_id' => 'Pengajuan tidak memiliki data ruang laboratorium.',
+                        'ruangan_id' => 'Pengajuan harus mencakup ruang laboratorium atau alat.',
                     ]);
                 }
 
-                $details = $booking->detailAlat()->orderBy('alat_id')->get();
                 if ($details->isEmpty()) {
                     $availability->lockAndAssertAvailable(
                         (int) $roomId,
@@ -68,7 +68,7 @@ class StaffController extends Controller
                 } else {
                     foreach ($details as $detail) {
                         $availability->lockAndAssertAvailable(
-                            (int) $roomId,
+                            $roomId ? (int) $roomId : null,
                             $booking->tanggal_pinjam,
                             $booking->jam_mulai,
                             $booking->jam_selesai,
@@ -140,7 +140,7 @@ class StaffController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
         foreach ($booking->detailAlat as $detail) {
-            $rules["units.{$detail->id}"] = ['required', 'array', 'size:' . $detail->jumlah];
+            $rules["units.{$detail->id}"] = ['required', 'array', 'size:'.$detail->jumlah];
             $rules["units.{$detail->id}.*"] = ['required', 'integer', 'distinct', 'exists:unit_alat,id'];
             $rules["unit_conditions.{$detail->id}"] = ['nullable', 'array'];
             // Kondisi hanya wajib untuk unit yang dicentang — dicek di
@@ -281,7 +281,7 @@ class StaffController extends Controller
                     foreach ($detail->detailAlatUnits as $row) {
                         $unitId = $row->unit_alat_id;
                         $condition = $validated['unit_conditions'][$detail->id][$unitId];
-                        $damaged = !empty($validated['unit_damaged'][$detail->id][$unitId] ?? null);
+                        $damaged = ! empty($validated['unit_damaged'][$detail->id][$unitId] ?? null);
                         $description = trim($validated['unit_damage_descriptions'][$detail->id][$unitId] ?? '');
 
                         if ($damaged && $description === '') {
@@ -353,7 +353,7 @@ class StaffController extends Controller
     private function ensureReadyForReturn(Peminjaman $booking): void
     {
         if ($booking->status !== 'Sedang Dipinjam'
-            || !$booking->serahTerima()->exists()
+            || ! $booking->serahTerima()->exists()
             || $booking->pengembalian()->exists()) {
             abort(409, 'Peminjaman belum diserahterimakan atau sudah dikembalikan.');
         }
